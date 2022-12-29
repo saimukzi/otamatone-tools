@@ -145,4 +145,3 @@ for note in note_list:
         draw.line((p0,p1,p2,p0),fill=(0,0,0,255),width=1)
 
 img.save(args.output_img_path)
-
