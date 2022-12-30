@@ -13,7 +13,7 @@ PITCH_A4 = 69
 LINE_PITCH_CNT = 4
 LINE_PITCH_CNT3 = LINE_PITCH_CNT*3
 
-PX_UNIT = 32
+PX_UNIT = 64
 X_OFFSET = PX_UNIT//8
 Y_OFFSET = PX_UNIT*3//8
 BUFFER_Y_OFFSET = PX_UNIT * 2
@@ -35,35 +35,51 @@ for ti,track in enumerate(mid.tracks):
 
 cp_to_note_deque = {}
 note_list = []
-for ti,track in enumerate(mid.tracks):
-    t = 0
-    for msg in track:
-        t += msg.time
-        if msg.is_meta: continue
-        elif msg.type == 'note_on':
-            note = {
-                'channel': msg.channel,
-                'pitch': msg.note,
-                'start': t
-            }
-            cp = (msg.channel, msg.note)
-            if cp not in cp_to_note_deque:
-                cp_to_note_deque[cp] = deque()
-            cp_to_note_deque[cp].append(note)
-            note_list.append(note)
-        elif msg.type == 'note_off':
-            cp = (msg.channel, msg.note)
-            if cp not in cp_to_note_deque:
-                print(f'err-XRBOLKQWAY: msg={msg}| channel-note not found', file=sys.stderr)
-                exit(1)
-            note_deque = cp_to_note_deque[cp]
-            if len(note_deque) <= 0:
-                print(f'err-OULBGQXBDA: msg={msg}| channel-note queue size zero', file=sys.stderr)
-                exit(1)
-            note = note_deque.popleft()
-            note['end'] = t
-        else:
-            print(f'err-RVIXOVZSVX: msg={msg}| unhandled note found', file=sys.stderr)
+time_signature_list = []
+time_signature_list.append({
+    'numerator': 4,
+    'denominator': 4,
+    'start': 0,
+})
+track = mid.tracks[0]
+t = 0
+for msg in track:
+    t += msg.time
+    if msg.type == 'time_signature':
+        #print(f'numerator={msg.numerator}, denominator={msg.denominator}')
+        time_signature_list[-1]['end'] = t
+        time_signature_list.append({
+            'numerator': msg.numerator,
+            'denominator': msg.denominator,
+            'start': t,
+        })
+    elif msg.is_meta: pass
+    elif msg.type == 'note_on':
+        note = {
+            'channel': msg.channel,
+            'pitch': msg.note,
+            'start': t
+        }
+        cp = (msg.channel, msg.note)
+        if cp not in cp_to_note_deque:
+            cp_to_note_deque[cp] = deque()
+        cp_to_note_deque[cp].append(note)
+        note_list.append(note)
+    elif msg.type == 'note_off':
+        cp = (msg.channel, msg.note)
+        if cp not in cp_to_note_deque:
+            print(f'err-XRBOLKQWAY: msg={msg}| channel-note not found', file=sys.stderr)
+            exit(1)
+        note_deque = cp_to_note_deque[cp]
+        if len(note_deque) <= 0:
+            print(f'err-OULBGQXBDA: msg={msg}| channel-note queue size zero', file=sys.stderr)
+            exit(1)
+        note = note_deque.popleft()
+        note['end'] = t
+    else:
+        print(f'err-RVIXOVZSVX: msg={msg}| unhandled note found', file=sys.stderr)
+
+time_signature_list[-1]['end'] = t
 
 for note in note_list:
     print(note)
@@ -71,6 +87,7 @@ for note in note_list:
 time_min = note_list
 time_min = map(lambda i:i['start'], time_min)
 time_min = min(time_min)
+time_min = 0
 print(f'time_min={time_min}')
 
 time_max = note_list
@@ -117,15 +134,45 @@ for pitch in range(buffer_sheet_r_pitch, buffer_sheet_l_pitch+1):
             (246,246,255,255)
     draw.rectangle((x0,y0,x1,y1), fill=color)
 
+# draw note len
+C = 0xdd
+for note in note_list:
+    pitch = note['pitch']
+    start = note['start']
+    end   = note['end']
+    p4 = ( pitch - PITCH_A4 + 300 ) % (LINE_PITCH_CNT)
+    x = (buffer_sheet_l_pitch-pitch) * PX_UNIT / LINE_PITCH_CNT
+    x0 = x-PX_UNIT//4
+    x1 = x+PX_UNIT//4
+    y0 = (start-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET
+    y1 = (end-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET
+    draw.rectangle((x0,y0,x1,y1), fill=(C,C,C,255))
+
+# draw white time line
+x0,x1=(0,img_w)
+for t in range(time_min,time_max+1,TIME_UNIT):
+    y = (t-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET
+    draw.line((x0,y,x1,y),fill=(255,255,255,255),width=2)
+
 # draw vertical line
+C = 128
 for pitch in range(buffer_sheet_r_pitch, buffer_sheet_l_pitch+1):
     p = ( pitch - PITCH_A4 + 300 ) % (LINE_PITCH_CNT3)
     if p % LINE_PITCH_CNT != 0: continue
     x = (buffer_sheet_l_pitch-pitch) * PX_UNIT / LINE_PITCH_CNT
     y0,y1 = 0,img_h
-    w = 2 if p % LINE_PITCH_CNT3 == 0 else 1
+    w = 4 if p % LINE_PITCH_CNT3 == 0 else 2
     print((x,y0,x,y1))
-    draw.line((x,y0,x,y1),fill=(0,0,0,255),width=w)
+    draw.line((x,y0,x,y1),fill=(C,C,C,255),width=w)
+
+# draw horizontal line
+C = 128
+x0,x1 = (0,img_w)
+for time_signature in time_signature_list:
+    dt = TIME_UNIT*time_signature['numerator']*4//time_signature['denominator']
+    for t in range(time_signature['start'],time_signature['end'],dt):
+        y = (t-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET
+        draw.line((x0,y,x1,y),fill=(C,C,C,255),width=w)
 
 # draw note
 for note in note_list:
@@ -135,26 +182,26 @@ for note in note_list:
     if p4 == 0:
         x = (buffer_sheet_l_pitch-pitch) * PX_UNIT / LINE_PITCH_CNT
         y = (start-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET
-        draw.line((x-PX_UNIT_PHII2,y-PX_UNIT_PHII2,x+PX_UNIT_PHII2,y+PX_UNIT_PHII2),fill=(0,0,0,255),width=1)
-        draw.line((x-PX_UNIT_PHII2,y+PX_UNIT_PHII2,x+PX_UNIT_PHII2,y-PX_UNIT_PHII2),fill=(0,0,0,255),width=1)
+        draw.line((x-PX_UNIT_PHII2,y-PX_UNIT_PHII2,x+PX_UNIT_PHII2,y+PX_UNIT_PHII2),fill=(0,0,0,255),width=4)
+        draw.line((x-PX_UNIT_PHII2,y+PX_UNIT_PHII2,x+PX_UNIT_PHII2,y-PX_UNIT_PHII2),fill=(0,0,0,255),width=4)
     elif p4 == 1:
         x = (buffer_sheet_l_pitch-pitch+1) * PX_UNIT / LINE_PITCH_CNT
         y = (start-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET
         p0 = (x,y)
         p1 = (x-PX_UNIT_PHII2*2,y-PX_UNIT_PHII2)
         p2 = (x-PX_UNIT_PHII2*2,y+PX_UNIT_PHII2)
-        draw.line((p0,p1,p2,p0),fill=(0,0,0,255),width=1)
+        draw.line((p0,p1,p2,p0),fill=(0,0,0,255),width=4)
     elif p4 == 2:
         x = (buffer_sheet_l_pitch-pitch) * PX_UNIT / LINE_PITCH_CNT
         y = (start-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET
-        draw.ellipse((x-PX_UNIT_PHII2,y-PX_UNIT_PHII2,x+PX_UNIT_PHII2,y+PX_UNIT_PHII2),outline=(0,0,0,255),width=1)
+        draw.ellipse((x-PX_UNIT_PHII2,y-PX_UNIT_PHII2,x+PX_UNIT_PHII2,y+PX_UNIT_PHII2),outline=(0,0,0,255),width=4)
     elif p4 == 3:
         x = (buffer_sheet_l_pitch-pitch-1) * PX_UNIT / LINE_PITCH_CNT
         y = (start-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET
         p0 = (x,y)
         p1 = (x+PX_UNIT_PHII2*2,y-PX_UNIT_PHII2)
         p2 = (x+PX_UNIT_PHII2*2,y+PX_UNIT_PHII2)
-        draw.line((p0,p1,p2,p0),fill=(0,0,0,255),width=1)
+        draw.line((p0,p1,p2,p0),fill=(0,0,0,255),width=4)
 
 img.save(args.output_img_path)
 
