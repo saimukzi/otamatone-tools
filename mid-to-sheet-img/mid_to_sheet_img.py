@@ -94,7 +94,7 @@ buffer_sheet_l_pitch = pitch_max + 4
 
 #buffer_sheet_r_pitch = math.floor((pitch_min-1-PITCH_A4)/LINE_PITCH_CNT)*LINE_PITCH_CNT+PITCH_A4
 #print(f'buffer_sheet_r_pitch={buffer_sheet_r_pitch}')
-buffer_sheet_r_pitch = pitch_min - 4
+buffer_sheet_r_pitch = pitch_min - 8
 
 img_w = PX_UNIT * (buffer_sheet_l_pitch-buffer_sheet_r_pitch) // LINE_PITCH_CNT
 img_h = PX_UNIT * (time_max-time_min) // TIME_UNIT + BUFFER_Y_OFFSET*2
@@ -104,6 +104,18 @@ print(f'img_w={img_w}, img_h={img_h}')
 img = Image.new('RGBA', (img_w,img_h), (255,255,255,255) )
 
 draw = ImageDraw.Draw(img)
+
+# draw color bg
+y0,y1 = 0,img_h
+for pitch in range(buffer_sheet_r_pitch, buffer_sheet_l_pitch+1):
+    p12 = ( pitch - PITCH_A4 + 300 ) % (LINE_PITCH_CNT3)
+    if p12 % LINE_PITCH_CNT != 0: continue
+    x0 = (buffer_sheet_l_pitch-pitch-LINE_PITCH_CNT) * PX_UNIT / LINE_PITCH_CNT
+    x1 = (buffer_sheet_l_pitch-pitch) * PX_UNIT / LINE_PITCH_CNT
+    color = (255,246,246,255) if p12 == 0 else \
+            (246,255,246,255) if p12 == LINE_PITCH_CNT else \
+            (246,246,255,255)
+    draw.rectangle((x0,y0,x1,y1), fill=color)
 
 # draw vertical line
 for pitch in range(buffer_sheet_r_pitch, buffer_sheet_l_pitch+1):
