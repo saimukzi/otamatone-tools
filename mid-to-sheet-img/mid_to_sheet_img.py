@@ -14,11 +14,13 @@ LINE_PITCH_CNT = 4
 LINE_PITCH_CNT3 = LINE_PITCH_CNT*3
 
 PX_UNIT = 64
-X_OFFSET = PX_UNIT//8
+X_OFFSET = PX_UNIT*7//8
 Y_OFFSET = PX_UNIT*3//8
 BUFFER_Y_OFFSET = PX_UNIT * 2
 PHI = (1+5**0.5)/2 
 PX_UNIT_PHII2 = math.ceil(PX_UNIT/PHI/2)
+
+OUTPUT_H = 1080
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input_mid_path')
@@ -107,7 +109,7 @@ print(f'pitch_max={pitch_max}')
 
 #buffer_sheet_l_pitch = math.ceil((pitch_max+1-PITCH_A4)/LINE_PITCH_CNT)*LINE_PITCH_CNT+PITCH_A4
 #print(f'buffer_sheet_l_pitch={buffer_sheet_l_pitch}')
-buffer_sheet_l_pitch = pitch_max + 4
+buffer_sheet_l_pitch = pitch_max + 8
 
 #buffer_sheet_r_pitch = math.floor((pitch_min-1-PITCH_A4)/LINE_PITCH_CNT)*LINE_PITCH_CNT+PITCH_A4
 #print(f'buffer_sheet_r_pitch={buffer_sheet_r_pitch}')
@@ -170,7 +172,7 @@ C = 128
 x0,x1 = (0,img_w)
 for time_signature in time_signature_list:
     dt = TIME_UNIT*time_signature['numerator']*4//time_signature['denominator']
-    for t in range(time_signature['start'],time_signature['end'],dt):
+    for t in range(time_signature['start'],time_signature['end']+1,dt):
         y = (t-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET
         draw.line((x0,y,x1,y),fill=(C,C,C,255),width=w)
 
@@ -203,5 +205,71 @@ for note in note_list:
         p2 = (x+PX_UNIT_PHII2*2,y+PX_UNIT_PHII2)
         draw.line((p0,p1,p2,p0),fill=(0,0,0,255),width=4)
 
-img.save(args.output_img_path)
+clip_rect_list = []
+clip_rect_list.append({
+    't0':0,
+})
+for time_signature in time_signature_list:
+    dt = TIME_UNIT*time_signature['numerator']*4//time_signature['denominator']
+    for t in range(time_signature['start'],time_signature['end'],dt):
+        clip_t = t - clip_rect_list[-1]['t0']
+        clip_h = Y_OFFSET*2 + clip_t*PX_UNIT//TIME_UNIT
+        if clip_h <= OUTPUT_H:
+            clip_rect_list[-1]['t1'] = t
+        else:
+            clip_rect_list.append({
+                't0':clip_rect_list[-1]['t1'],
+            })
+clip_rect_list[-1]['t1'] = time_max
 
+if clip_rect_list[-1]['t0'] >= clip_rect_list[-1]['t1']:
+    clip_rect_list.pop()
+
+for clip_rect in clip_rect_list:
+    pitch_list = note_list
+    pitch_list = filter(lambda i:i['start']>=clip_rect['t0'],pitch_list)
+    pitch_list = filter(lambda i:i['end']<=clip_rect['t1'],pitch_list)
+    pitch_list = map(lambda i:i['pitch'],pitch_list)
+    pitch_list = list(pitch_list)
+    clip_rect['p0'] = min(pitch_list)
+    clip_rect['p1'] = max(pitch_list)
+
+for clip_rect in clip_rect_list:
+    clip_rect['y0'] = (clip_rect['t0']-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET - Y_OFFSET
+    clip_rect['y1'] = (clip_rect['t1']-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET + Y_OFFSET
+    clip_rect['x0'] = (buffer_sheet_l_pitch-clip_rect['p1']) * PX_UNIT // LINE_PITCH_CNT - X_OFFSET
+    clip_rect['x1'] = (buffer_sheet_l_pitch-clip_rect['p0']) * PX_UNIT // LINE_PITCH_CNT + X_OFFSET
+
+#for clip_rect in clip_rect_list:
+#    x0,x1 = clip_rect['x0'],clip_rect['x1']
+#    y0,y1 = clip_rect['y0'],clip_rect['y1']
+#    draw.rectangle((x0,y0,x1,y1),outline=(0xff,0,0,255),width=1)
+#    #draw.line((x0,y1,x1,y1),fill=(0xff,0,0,255),width=1)
+
+#img.save(args.output_img_path)
+
+max_clip_rect_h = clip_rect_list
+max_clip_rect_h = map(lambda i:i['y1']-i['y0'], max_clip_rect_h)
+max_clip_rect_h = max(max_clip_rect_h)
+
+paste_y = (OUTPUT_H-max_clip_rect_h)//2
+
+output_w = clip_rect_list
+output_w = map(lambda i:i['x1']-i['x0'], output_w)
+output_w = sum(output_w)
+output_w += (len(clip_rect_list)+1)*PX_UNIT
+
+out_img = Image.new('RGBA', (output_w,OUTPUT_H), (255,255,255,255) )
+#out_draw = ImageDraw.Draw(out_img)
+
+x = output_w
+x -= PX_UNIT
+for clip_rect in clip_rect_list:
+    x0,x1 = clip_rect['x0'],clip_rect['x1']
+    y0,y1 = clip_rect['y0'],clip_rect['y1']
+    region = img.crop((x0,y0,x1,y1))
+    x -= (x1-x0)
+    out_img.paste(region,(x,paste_y))
+    x -= PX_UNIT
+
+out_img.save(args.output_img_path)
