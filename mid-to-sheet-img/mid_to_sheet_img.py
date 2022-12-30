@@ -5,6 +5,8 @@ import sys
 from collections import deque
 from PIL import Image, ImageDraw
 
+PHI = (1+5**0.5)/2 
+
 # midi clock = 24, https://en.wikipedia.org/wiki/MIDI_beat_clock
 MIDI_CLOCK = 24
 TIME_UNIT = MIDI_CLOCK*8
@@ -14,13 +16,10 @@ LINE_PITCH_CNT = 4
 LINE_PITCH_CNT3 = LINE_PITCH_CNT*3
 
 PX_UNIT = 64
-X_OFFSET = PX_UNIT*7//8
-Y_OFFSET = PX_UNIT*3//8
+X_OFFSET = math.floor(PX_UNIT/PHI)
+Y_OFFSET = math.floor(PX_UNIT/PHI)
 BUFFER_Y_OFFSET = PX_UNIT * 2
-PHI = (1+5**0.5)/2 
 PX_UNIT_PHII2 = math.ceil(PX_UNIT/PHI/2)
-
-OUTPUT_H = 1080
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input_mid_path')
@@ -43,6 +42,8 @@ time_signature_list.append({
     'denominator': 4,
     'start': 0,
 })
+line_break_list = []
+line_break_list.append(0)
 track = mid.tracks[0]
 t = 0
 for msg in track:
@@ -55,6 +56,8 @@ for msg in track:
             'denominator': msg.denominator,
             'start': t,
         })
+    elif msg.type == 'cue_marker' and msg.text=='smz-line-break':
+        line_break_list.append(t)
     elif msg.is_meta: pass
     elif msg.type == 'note_on':
         note = {
@@ -157,15 +160,17 @@ for t in range(time_min,time_max+1,TIME_UNIT):
     draw.line((x0,y,x1,y),fill=(255,255,255,255),width=2)
 
 # draw vertical line
-C = 128
+C0 = 128
+C1 = 192
 for pitch in range(buffer_sheet_r_pitch, buffer_sheet_l_pitch+1):
     p = ( pitch - PITCH_A4 + 300 ) % (LINE_PITCH_CNT3)
     if p % LINE_PITCH_CNT != 0: continue
     x = (buffer_sheet_l_pitch-pitch) * PX_UNIT / LINE_PITCH_CNT
     y0,y1 = 0,img_h
-    w = 4 if p % LINE_PITCH_CNT3 == 0 else 2
+    w = 4 if p % LINE_PITCH_CNT3 == 0 else 1
+    c = C0 if p % LINE_PITCH_CNT3 == 0 else C1
     print((x,y0,x,y1))
-    draw.line((x,y0,x,y1),fill=(C,C,C,255),width=w)
+    draw.line((x,y0,x,y1),fill=(c,c,c,255),width=w)
 
 # draw horizontal line
 C = 128
@@ -205,34 +210,31 @@ for note in note_list:
         p2 = (x+PX_UNIT_PHII2*2,y+PX_UNIT_PHII2)
         draw.line((p0,p1,p2,p0),fill=(0,0,0,255),width=4)
 
+line_break_list.append(time_max)
+line_break_list.append(time_min)
+line_break_list.sort()
 clip_rect_list = []
-clip_rect_list.append({
-    't0':0,
-})
-for time_signature in time_signature_list:
-    dt = TIME_UNIT*time_signature['numerator']*4//time_signature['denominator']
-    for t in range(time_signature['start'],time_signature['end'],dt):
-        clip_t = t - clip_rect_list[-1]['t0']
-        clip_h = Y_OFFSET*2 + clip_t*PX_UNIT//TIME_UNIT
-        if clip_h <= OUTPUT_H:
-            clip_rect_list[-1]['t1'] = t
-        else:
-            clip_rect_list.append({
-                't0':clip_rect_list[-1]['t1'],
-            })
-clip_rect_list[-1]['t1'] = time_max
+for i in range(len(line_break_list)-1):
+    clip_rect_list.append({
+        't0':line_break_list[i],
+        't1':line_break_list[i+1],
+    })
 
-if clip_rect_list[-1]['t0'] >= clip_rect_list[-1]['t1']:
-    clip_rect_list.pop()
+clip_rect_list = list(filter(lambda i:i['t0']<i['t1'],clip_rect_list))
 
 for clip_rect in clip_rect_list:
     pitch_list = note_list
-    pitch_list = filter(lambda i:i['start']>=clip_rect['t0'],pitch_list)
-    pitch_list = filter(lambda i:i['end']<=clip_rect['t1'],pitch_list)
+    pitch_list = filter(lambda i:i['end']>=clip_rect['t0'],pitch_list)
+    pitch_list = filter(lambda i:i['start']<=clip_rect['t1'],pitch_list)
     pitch_list = map(lambda i:i['pitch'],pitch_list)
     pitch_list = list(pitch_list)
+    if len(pitch_list) <= 1: continue
     clip_rect['p0'] = min(pitch_list)
     clip_rect['p1'] = max(pitch_list)
+
+clip_rect_list = filter(lambda i:'p0'in i,clip_rect_list)
+clip_rect_list = filter(lambda i:'p1'in i,clip_rect_list)
+clip_rect_list = list(clip_rect_list)
 
 for clip_rect in clip_rect_list:
     clip_rect['y0'] = (clip_rect['t0']-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET - Y_OFFSET
@@ -248,28 +250,25 @@ for clip_rect in clip_rect_list:
 
 #img.save(args.output_img_path)
 
-max_clip_rect_h = clip_rect_list
-max_clip_rect_h = map(lambda i:i['y1']-i['y0'], max_clip_rect_h)
-max_clip_rect_h = max(max_clip_rect_h)
-
-paste_y = (OUTPUT_H-max_clip_rect_h)//2
+output_h = clip_rect_list
+output_h = map(lambda i:i['y1']-i['y0'], output_h)
+output_h = max(output_h)
 
 output_w = clip_rect_list
 output_w = map(lambda i:i['x1']-i['x0'], output_w)
 output_w = sum(output_w)
-output_w += (len(clip_rect_list)+1)*PX_UNIT
+output_w += (len(clip_rect_list)-1)*PX_UNIT
 
-out_img = Image.new('RGBA', (output_w,OUTPUT_H), (255,255,255,255) )
+out_img = Image.new('RGBA', (output_w,output_h), (255,255,255,255) )
 #out_draw = ImageDraw.Draw(out_img)
 
 x = output_w
-x -= PX_UNIT
 for clip_rect in clip_rect_list:
     x0,x1 = clip_rect['x0'],clip_rect['x1']
     y0,y1 = clip_rect['y0'],clip_rect['y1']
     region = img.crop((x0,y0,x1,y1))
     x -= (x1-x0)
-    out_img.paste(region,(x,paste_y))
+    out_img.paste(region,(x,0))
     x -= PX_UNIT
 
 out_img.save(args.output_img_path)
