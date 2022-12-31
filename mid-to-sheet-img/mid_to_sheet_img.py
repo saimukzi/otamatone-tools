@@ -8,8 +8,8 @@ from PIL import Image, ImageDraw
 PHI = (1+5**0.5)/2 
 
 # midi clock = 24, https://en.wikipedia.org/wiki/MIDI_beat_clock
-MIDI_CLOCK = 24
-TIME_UNIT = MIDI_CLOCK*8
+#MIDI_CLOCK = 24
+#TIME_UNIT = MIDI_CLOCK*8
 
 PITCH_A4 = 69
 LINE_PITCH_CNT = 4
@@ -19,14 +19,18 @@ PX_UNIT = 64
 X_OFFSET = math.floor(PX_UNIT/PHI)
 Y_OFFSET = math.floor(PX_UNIT/PHI)
 BUFFER_Y_OFFSET = PX_UNIT * 2
+PX_UNIT_PHII = math.ceil(PX_UNIT/PHI)
 PX_UNIT_PHII2 = math.ceil(PX_UNIT/PHI/2)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input_mid_path')
 parser.add_argument('output_img_path')
+parser.add_argument('--beat-padding', type=int)
 args = parser.parse_args()
 
 mid = mido.MidiFile(args.input_mid_path)
+#print(f'ticks_per_beat={mid.ticks_per_beat}')
+ticks_per_beat = mid.ticks_per_beat
 
 for ti,track in enumerate(mid.tracks):
     print(f'[track {ti}, {track.name}]')
@@ -86,13 +90,21 @@ for msg in track:
 
 time_signature_list[-1]['end'] = t
 
+if args.beat_padding:
+    p = args.beat_padding
+    pp = lambda i:(i*p+(ticks_per_beat//2))//ticks_per_beat*ticks_per_beat//p
+    for note in note_list:
+        note['start'] = pp(note['start'])
+        note['end']   = pp(note['end'])
+    line_break_list = list(map(pp,line_break_list))
+
 for note in note_list:
     print(note)
 
 time_min = note_list
 time_min = map(lambda i:i['start'], time_min)
 time_min = min(time_min)
-time_min = 0
+#time_min = 0
 print(f'time_min={time_min}')
 
 time_max = note_list
@@ -119,7 +131,7 @@ buffer_sheet_l_pitch = pitch_max + 8
 buffer_sheet_r_pitch = pitch_min - 8
 
 img_w = PX_UNIT * (buffer_sheet_l_pitch-buffer_sheet_r_pitch) // LINE_PITCH_CNT
-img_h = PX_UNIT * (time_max-time_min) // TIME_UNIT + BUFFER_Y_OFFSET*2
+img_h = PX_UNIT * (time_max-time_min) // ticks_per_beat + BUFFER_Y_OFFSET*2
 
 print(f'img_w={img_w}, img_h={img_h}')
 
@@ -149,14 +161,14 @@ for note in note_list:
     x = (buffer_sheet_l_pitch-pitch) * PX_UNIT / LINE_PITCH_CNT
     x0 = x-PX_UNIT//4
     x1 = x+PX_UNIT//4
-    y0 = (start-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET
-    y1 = (end-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET
+    y0 = (start-time_min) * PX_UNIT // ticks_per_beat + BUFFER_Y_OFFSET
+    y1 = (end-time_min) * PX_UNIT // ticks_per_beat + BUFFER_Y_OFFSET
     draw.rectangle((x0,y0,x1,y1), fill=(C,C,C,255))
 
 # draw white time line
 x0,x1=(0,img_w)
-for t in range(time_min,time_max+1,TIME_UNIT):
-    y = (t-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET
+for t in range(0,math.ceil((time_max+1)/ticks_per_beat)*ticks_per_beat,ticks_per_beat):
+    y = (t-time_min) * PX_UNIT // ticks_per_beat + BUFFER_Y_OFFSET
     draw.line((x0,y,x1,y),fill=(255,255,255,255),width=2)
 
 # draw vertical line
@@ -176,9 +188,9 @@ for pitch in range(buffer_sheet_r_pitch, buffer_sheet_l_pitch+1):
 C = 128
 x0,x1 = (0,img_w)
 for time_signature in time_signature_list:
-    dt = TIME_UNIT*time_signature['numerator']*4//time_signature['denominator']
+    dt = ticks_per_beat*time_signature['numerator']*4//time_signature['denominator']
     for t in range(time_signature['start'],time_signature['end']+1,dt):
-        y = (t-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET
+        y = (t-time_min) * PX_UNIT // ticks_per_beat + BUFFER_Y_OFFSET
         draw.line((x0,y,x1,y),fill=(C,C,C,255),width=w)
 
 # draw note
@@ -188,23 +200,23 @@ for note in note_list:
     p4 = ( pitch - PITCH_A4 + 300 ) % (LINE_PITCH_CNT)
     if p4 == 0:
         x = (buffer_sheet_l_pitch-pitch) * PX_UNIT / LINE_PITCH_CNT
-        y = (start-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET
+        y = (start-time_min) * PX_UNIT // ticks_per_beat + BUFFER_Y_OFFSET
         draw.line((x-PX_UNIT_PHII2,y-PX_UNIT_PHII2,x+PX_UNIT_PHII2,y+PX_UNIT_PHII2),fill=(0,0,0,255),width=4)
         draw.line((x-PX_UNIT_PHII2,y+PX_UNIT_PHII2,x+PX_UNIT_PHII2,y-PX_UNIT_PHII2),fill=(0,0,0,255),width=4)
     elif p4 == 1:
         x = (buffer_sheet_l_pitch-pitch+1) * PX_UNIT / LINE_PITCH_CNT
-        y = (start-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET
+        y = (start-time_min) * PX_UNIT // ticks_per_beat + BUFFER_Y_OFFSET
         p0 = (x,y)
         p1 = (x-PX_UNIT_PHII2*2,y-PX_UNIT_PHII2)
         p2 = (x-PX_UNIT_PHII2*2,y+PX_UNIT_PHII2)
         draw.line((p0,p1,p2,p0),fill=(0,0,0,255),width=4)
     elif p4 == 2:
         x = (buffer_sheet_l_pitch-pitch) * PX_UNIT / LINE_PITCH_CNT
-        y = (start-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET
+        y = (start-time_min) * PX_UNIT // ticks_per_beat + BUFFER_Y_OFFSET
         draw.ellipse((x-PX_UNIT_PHII2,y-PX_UNIT_PHII2,x+PX_UNIT_PHII2,y+PX_UNIT_PHII2),outline=(0,0,0,255),width=4)
     elif p4 == 3:
         x = (buffer_sheet_l_pitch-pitch-1) * PX_UNIT / LINE_PITCH_CNT
-        y = (start-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET
+        y = (start-time_min) * PX_UNIT // ticks_per_beat + BUFFER_Y_OFFSET
         p0 = (x,y)
         p1 = (x+PX_UNIT_PHII2*2,y-PX_UNIT_PHII2)
         p2 = (x+PX_UNIT_PHII2*2,y+PX_UNIT_PHII2)
@@ -237,8 +249,8 @@ clip_rect_list = filter(lambda i:'p1'in i,clip_rect_list)
 clip_rect_list = list(clip_rect_list)
 
 for clip_rect in clip_rect_list:
-    clip_rect['y0'] = (clip_rect['t0']-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET - Y_OFFSET
-    clip_rect['y1'] = (clip_rect['t1']-time_min) * PX_UNIT // TIME_UNIT + BUFFER_Y_OFFSET + Y_OFFSET
+    clip_rect['y0'] = (clip_rect['t0']-time_min) * PX_UNIT // ticks_per_beat + BUFFER_Y_OFFSET - Y_OFFSET
+    clip_rect['y1'] = (clip_rect['t1']-time_min) * PX_UNIT // ticks_per_beat + BUFFER_Y_OFFSET + Y_OFFSET
     clip_rect['x0'] = (buffer_sheet_l_pitch-clip_rect['p1']) * PX_UNIT // LINE_PITCH_CNT - X_OFFSET
     clip_rect['x1'] = (buffer_sheet_l_pitch-clip_rect['p0']) * PX_UNIT // LINE_PITCH_CNT + X_OFFSET
 
@@ -257,7 +269,7 @@ output_h = max(output_h)
 output_w = clip_rect_list
 output_w = map(lambda i:i['x1']-i['x0'], output_w)
 output_w = sum(output_w)
-output_w += (len(clip_rect_list)-1)*PX_UNIT
+output_w += (len(clip_rect_list)-1)*PX_UNIT_PHII
 
 out_img = Image.new('RGBA', (output_w,output_h), (255,255,255,255) )
 #out_draw = ImageDraw.Draw(out_img)
@@ -269,6 +281,6 @@ for clip_rect in clip_rect_list:
     region = img.crop((x0,y0,x1,y1))
     x -= (x1-x0)
     out_img.paste(region,(x,0))
-    x -= PX_UNIT
+    x -= PX_UNIT_PHII
 
 out_img.save(args.output_img_path)
