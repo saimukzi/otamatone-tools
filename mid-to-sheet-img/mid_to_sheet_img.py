@@ -63,7 +63,7 @@ for msg in track:
     elif msg.type == 'cue_marker' and msg.text=='smz-line-break':
         line_break_list.append(t)
     elif msg.is_meta: pass
-    elif msg.type == 'note_on':
+    elif msg.type == 'note_on' and msg.velocity > 0:
         note = {
             'channel': msg.channel,
             'pitch': msg.note,
@@ -74,7 +74,7 @@ for msg in track:
             cp_to_note_deque[cp] = deque()
         cp_to_note_deque[cp].append(note)
         note_list.append(note)
-    elif msg.type == 'note_off':
+    elif msg.type == 'note_off' or msg.type == 'note_on':
         cp = (msg.channel, msg.note)
         if cp not in cp_to_note_deque:
             print(f'err-XRBOLKQWAY: msg={msg}| channel-note not found', file=sys.stderr)
