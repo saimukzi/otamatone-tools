@@ -236,11 +236,19 @@ clip_rect_list = list(filter(lambda i:i['t0']<i['t1'],clip_rect_list))
 
 for clip_rect in clip_rect_list:
     pitch_list = note_list
+    pitch_list = filter(lambda i:i['end']>clip_rect['t0'],pitch_list)
+    pitch_list = filter(lambda i:i['start']<clip_rect['t1'],pitch_list)
+    pitch_list = list(pitch_list)
+    clip_rect['remain'] = len(pitch_list)
+
+clip_rect_list = list(filter(lambda i:i['remain']>0,clip_rect_list))
+
+for clip_rect in clip_rect_list:
+    pitch_list = note_list
     pitch_list = filter(lambda i:i['end']>=clip_rect['t0'],pitch_list)
     pitch_list = filter(lambda i:i['start']<=clip_rect['t1'],pitch_list)
     pitch_list = map(lambda i:i['pitch'],pitch_list)
     pitch_list = list(pitch_list)
-    if len(pitch_list) <= 1: continue
     clip_rect['p0'] = min(pitch_list)
     clip_rect['p1'] = max(pitch_list)
 
