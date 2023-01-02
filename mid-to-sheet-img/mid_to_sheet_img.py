@@ -46,6 +46,8 @@ time_signature_list.append({
     'denominator': 4,
     'start': 0,
 })
+page_break_list = []
+page_break_list.append(0)
 line_break_list = []
 line_break_list.append(0)
 track = mid.tracks[0]
@@ -60,6 +62,9 @@ for msg in track:
             'denominator': msg.denominator,
             'start': t,
         })
+    elif msg.type == 'cue_marker' and msg.text=='smz-page-break':
+        page_break_list.append(t)
+        line_break_list.append(t)
     elif msg.type == 'cue_marker' and msg.text=='smz-line-break':
         line_break_list.append(t)
     elif msg.is_meta: pass
@@ -97,6 +102,7 @@ if args.beat_padding:
         note['start'] = pp(note['start'])
         note['end']   = pp(note['end'])
     line_break_list = list(map(pp,line_break_list))
+    page_break_list = list(map(pp,page_break_list))
 
 for note in note_list:
     print(note)
@@ -222,73 +228,114 @@ for note in note_list:
         p2 = (x+PX_UNIT_PHII2*2,y+PX_UNIT_PHII2)
         draw.line((p0,p1,p2,p0),fill=(0,0,0,255),width=4)
 
+img.save(f'{args.output_img_path}-debug.png')
+
+page_break_list.append(time_max)
+page_break_list.append(time_min)
 line_break_list.append(time_max)
 line_break_list.append(time_min)
+page_break_list.sort()
 line_break_list.sort()
-clip_rect_list = []
-for i in range(len(line_break_list)-1):
-    clip_rect_list.append({
-        't0':line_break_list[i],
-        't1':line_break_list[i+1],
+
+print(f'line_break_list={line_break_list}')
+
+page_data_list = []
+for i in range(len(page_break_list)-1):
+    page_data_list.append({
+        't0':page_break_list[i],
+        't1':page_break_list[i+1],
     })
 
-clip_rect_list = list(filter(lambda i:i['t0']<i['t1'],clip_rect_list))
+page_data_list = list(filter(lambda i:i['t0']<i['t1'],page_data_list))
 
-for clip_rect in clip_rect_list:
-    pitch_list = note_list
-    pitch_list = filter(lambda i:i['end']>clip_rect['t0'],pitch_list)
-    pitch_list = filter(lambda i:i['start']<clip_rect['t1'],pitch_list)
-    pitch_list = list(pitch_list)
-    clip_rect['remain'] = len(pitch_list)
+page_id = 0
+for page_data in page_data_list:
 
-clip_rect_list = list(filter(lambda i:i['remain']>0,clip_rect_list))
+    print(f'page_id={page_id}')
+    print(f'page_data={page_data}')
 
-for clip_rect in clip_rect_list:
-    pitch_list = note_list
-    pitch_list = filter(lambda i:i['end']>=clip_rect['t0'],pitch_list)
-    pitch_list = filter(lambda i:i['start']<=clip_rect['t1'],pitch_list)
-    pitch_list = map(lambda i:i['pitch'],pitch_list)
-    pitch_list = list(pitch_list)
-    clip_rect['p0'] = min(pitch_list)
-    clip_rect['p1'] = max(pitch_list)
+    line_break_0_list = line_break_list
+    line_break_0_list = filter(lambda i:i>=page_data['t0'],line_break_0_list)
+    line_break_0_list = filter(lambda i:i<=page_data['t1'],line_break_0_list)
+    line_break_0_list = list(line_break_0_list)
 
-clip_rect_list = filter(lambda i:'p0'in i,clip_rect_list)
-clip_rect_list = filter(lambda i:'p1'in i,clip_rect_list)
-clip_rect_list = list(clip_rect_list)
+    print(f'line_break_0_list={line_break_0_list}')
 
-for clip_rect in clip_rect_list:
-    clip_rect['y0'] = (clip_rect['t0']-time_min) * PX_UNIT // ticks_per_beat + BUFFER_Y_OFFSET - Y_OFFSET
-    clip_rect['y1'] = (clip_rect['t1']-time_min) * PX_UNIT // ticks_per_beat + BUFFER_Y_OFFSET + Y_OFFSET
-    clip_rect['x0'] = (buffer_sheet_l_pitch-clip_rect['p1']) * PX_UNIT // LINE_PITCH_CNT - X_OFFSET
-    clip_rect['x1'] = (buffer_sheet_l_pitch-clip_rect['p0']) * PX_UNIT // LINE_PITCH_CNT + X_OFFSET
+    clip_rect_list = []
+    for i in range(len(line_break_0_list)-1):
+        clip_rect_list.append({
+            't0':line_break_0_list[i],
+            't1':line_break_0_list[i+1],
+        })
+    
+    clip_rect_list = list(filter(lambda i:i['t0']<i['t1'],clip_rect_list))
 
-#for clip_rect in clip_rect_list:
-#    x0,x1 = clip_rect['x0'],clip_rect['x1']
-#    y0,y1 = clip_rect['y0'],clip_rect['y1']
-#    draw.rectangle((x0,y0,x1,y1),outline=(0xff,0,0,255),width=1)
-#    #draw.line((x0,y1,x1,y1),fill=(0xff,0,0,255),width=1)
+    print(f'clip_rect_list={clip_rect_list}')
+    
+    for clip_rect in clip_rect_list:
+        pitch_list = note_list
+        pitch_list = filter(lambda i:i['end']>clip_rect['t0'],pitch_list)
+        pitch_list = filter(lambda i:i['start']<clip_rect['t1'],pitch_list)
+        pitch_list = list(pitch_list)
+        clip_rect['remain'] = len(pitch_list)
+    
+    clip_rect_list = list(filter(lambda i:i['remain']>0,clip_rect_list))
 
-#img.save(args.output_img_path)
+    print(f'clip_rect_list={clip_rect_list}')
+    
+    for clip_rect in clip_rect_list:
+        pitch_list = note_list
+        pitch_list = filter(lambda i:i['end']>=clip_rect['t0'],pitch_list)
+        pitch_list = filter(lambda i:i['start']<=clip_rect['t1'],pitch_list)
+        pitch_list = map(lambda i:i['pitch'],pitch_list)
+        pitch_list = list(pitch_list)
+        clip_rect['p0'] = min(pitch_list)
+        clip_rect['p1'] = max(pitch_list)
+    
+    clip_rect_list = filter(lambda i:'p0'in i,clip_rect_list)
+    clip_rect_list = filter(lambda i:'p1'in i,clip_rect_list)
+    clip_rect_list = list(clip_rect_list)
+    
+    print(f'clip_rect_list={clip_rect_list}')
 
-output_h = clip_rect_list
-output_h = map(lambda i:i['y1']-i['y0'], output_h)
-output_h = max(output_h)
-
-output_w = clip_rect_list
-output_w = map(lambda i:i['x1']-i['x0'], output_w)
-output_w = sum(output_w)
-output_w += (len(clip_rect_list)-1)*PX_UNIT_PHII
-
-out_img = Image.new('RGBA', (output_w,output_h), (255,255,255,255) )
-#out_draw = ImageDraw.Draw(out_img)
-
-x = output_w
-for clip_rect in clip_rect_list:
-    x0,x1 = clip_rect['x0'],clip_rect['x1']
-    y0,y1 = clip_rect['y0'],clip_rect['y1']
-    region = img.crop((x0,y0,x1,y1))
-    x -= (x1-x0)
-    out_img.paste(region,(x,0))
-    x -= PX_UNIT_PHII
-
-out_img.save(args.output_img_path)
+    if len(clip_rect_list) <= 0:
+        continue
+    
+    for clip_rect in clip_rect_list:
+        clip_rect['y0'] = (clip_rect['t0']-time_min) * PX_UNIT // ticks_per_beat + BUFFER_Y_OFFSET - Y_OFFSET
+        clip_rect['y1'] = (clip_rect['t1']-time_min) * PX_UNIT // ticks_per_beat + BUFFER_Y_OFFSET + Y_OFFSET
+        clip_rect['x0'] = (buffer_sheet_l_pitch-clip_rect['p1']) * PX_UNIT // LINE_PITCH_CNT - X_OFFSET
+        clip_rect['x1'] = (buffer_sheet_l_pitch-clip_rect['p0']) * PX_UNIT // LINE_PITCH_CNT + X_OFFSET
+    
+    #for clip_rect in clip_rect_list:
+    #    x0,x1 = clip_rect['x0'],clip_rect['x1']
+    #    y0,y1 = clip_rect['y0'],clip_rect['y1']
+    #    draw.rectangle((x0,y0,x1,y1),outline=(0xff,0,0,255),width=1)
+    #    #draw.line((x0,y1,x1,y1),fill=(0xff,0,0,255),width=1)
+    
+    #img.save(args.output_img_path)
+    
+    output_h = clip_rect_list
+    output_h = map(lambda i:i['y1']-i['y0'], output_h)
+    output_h = max(output_h)
+    
+    output_w = clip_rect_list
+    output_w = map(lambda i:i['x1']-i['x0'], output_w)
+    output_w = sum(output_w)
+    output_w += (len(clip_rect_list)-1)*PX_UNIT_PHII
+    
+    out_img = Image.new('RGBA', (output_w,output_h), (255,255,255,255) )
+    #out_draw = ImageDraw.Draw(out_img)
+    
+    x = output_w
+    for clip_rect in clip_rect_list:
+        x0,x1 = clip_rect['x0'],clip_rect['x1']
+        y0,y1 = clip_rect['y0'],clip_rect['y1']
+        region = img.crop((x0,y0,x1,y1))
+        x -= (x1-x0)
+        out_img.paste(region,(x,0))
+        x -= PX_UNIT_PHII
+    
+    out_img.save(f'{args.output_img_path}-{page_id}.png')
+    
+    page_id += 1
