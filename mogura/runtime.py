@@ -33,6 +33,8 @@ class Runtime:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.timer_pool.stop()
+            if event.type == pygame.DROPFILE:
+                file_path = event.file
 
 
 instance = None
