@@ -130,8 +130,8 @@ def track_to_tempo_list(track,end_tick,ticks_per_beat):
     ret_tempo_list[-1]['tick1'] = end_tick
     ret_tempo_list[-1]['sec6tpb1'] = (end_tick-ret_tempo_list[-1]['tick0'])*tempo
     
-    #ret_tempo_list = filter(lambda i:i['tick0']<i['tick1'],ret_tempo_list)
-    #ret_tempo_list = filter(lambda i:i['sec6tpb0']<i['sec6tpb1'],ret_tempo_list)
+    ret_tempo_list = filter(lambda i:i['tick0']<i['tick1'],ret_tempo_list)
+    ret_tempo_list = filter(lambda i:i['sec6tpb0']<i['sec6tpb1'],ret_tempo_list)
     ret_tempo_list = list(ret_tempo_list)
     
     return ret_tempo_list
