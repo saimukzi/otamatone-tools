@@ -27,3 +27,8 @@ class StatePool:
     
         if self.active_state is None: return
         self.active_state.event_tick(event, sec)
+
+    def on_screen_change(self, screen_size):
+        if self.active_state is None: return
+        self.active_state.on_screen_change(screen_size)
+

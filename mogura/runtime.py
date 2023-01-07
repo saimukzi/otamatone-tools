@@ -17,6 +17,7 @@ class Runtime:
         self.running = None
         self.timer_pool = timer_pool.TimerPool()
         self.state_pool = state_pool.StatePool()
+        self.screen_size = None
 
     def run(self):
         pygame.init()
@@ -35,6 +36,10 @@ class Runtime:
 
     def screen_tick(self, sec):
         # print('screen_tick')
+        screen_size = pygame.display.get_window_size()
+        if self.screen_size != screen_size:
+            self.state_pool.on_screen_change(screen_size)
+            self.screen_size = screen_size
         self.state_pool.screen_tick(self.screen, sec)
 
 

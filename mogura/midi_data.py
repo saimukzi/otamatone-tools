@@ -19,6 +19,17 @@ def track_to_data(track,ticks_per_beat):
     end_tick = track_data['noteev_list'][-1]['tick']
     track_data['bar_list']   = track_to_bar_list(track,end_tick,ticks_per_beat)
     track_data['tempo_list'] = track_to_tempo_list(track,end_tick,ticks_per_beat)
+
+    max_pitch = track_data['noteev_list']
+    max_pitch = map(lambda i:i['pitch'],max_pitch)
+    max_pitch = max(max_pitch)
+    track_data['max_pitch'] = max_pitch
+
+    min_pitch = track_data['noteev_list']
+    min_pitch = map(lambda i:i['pitch'],min_pitch)
+    min_pitch = min(min_pitch)
+    track_data['min_pitch'] = min_pitch
+
     return track_data
 
 
