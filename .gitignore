@@ -6,5 +6,6 @@ venv
 *.mid
 *.png
 *.json
+__pycache__
 
 smz_*
