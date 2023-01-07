@@ -1,4 +1,5 @@
 import freq_timer
+import midi_data
 import pygame
 import time
 import timer_pool
@@ -35,6 +36,8 @@ class Runtime:
                 self.timer_pool.stop()
             if event.type == pygame.DROPFILE:
                 file_path = event.file
+                self.midi_data = midi_data.path_to_data(file_path)
+                print(self.midi_data)
 
 
 instance = None
