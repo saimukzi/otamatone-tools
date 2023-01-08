@@ -21,16 +21,40 @@ class NoteState(null_state.NullState):
     def screen_tick(self, screen, sec):
         screen.fill((255,255,255))
         
+        track_data = self.runtime.midi_data['track_list'][0]
+        ticks_per_beat = self.matric_ticks_per_beat
+        min_tick = math.floor(self.y_to_tick(-self.ui_cell_width))
+        max_tick = math.ceil(self.y_to_tick(self.matric_screen_size[1]+self.ui_cell_width))
+        
+        # color note rail bg
         for matric_note_rail_bg_rect_data in self.matric_note_rail_bg_rect_data_list:
             #pygame.draw.rect(screen, matric_note_rail_bg_rect_data['color'], matric_note_rail_bg_rect_data['rect'])
             screen.fill(**matric_note_rail_bg_rect_data)
 
+        # time horizontal line
+        bar_set = self.runtime.midi_data['track_list'][0]['bar_set']
+        y0 = -self.ui_line0_width//2
+        y1 = -self.ui_line1_width//2
+        w = self.matric_note_rail_x1-self.matric_note_rail_x0
+        for tick in range(min_tick//ticks_per_beat*ticks_per_beat,max_tick,ticks_per_beat):
+            y = self.tick_to_y(tick)
+            if tick in bar_set:
+                screen.fill(
+                    rect=(self.matric_note_rail_x0,y+y1,w,self.ui_line1_width),
+                    color=(128,128,128,255),
+                )
+            else:
+                screen.fill(
+                    rect=(self.matric_note_rail_x0,y+y0,w,self.ui_line0_width),
+                    color=(255,255,255,255),
+                )
+
+        # note rail pitch line
         for matric_note_rail_pitch_line_data in self.matric_note_rail_pitch_line_data_list:
             screen.fill(**matric_note_rail_pitch_line_data)
 
-        min_tick = self.y_to_tick(-self.ui_cell_width)
-        max_tick = self.y_to_tick(self.matric_screen_size[1]+self.ui_cell_width)
-        track_data = self.runtime.midi_data['track_list'][0]
+
+        # draw note
         noteev_list = track_data['noteev_list']
         noteev_list = filter(lambda i:i['type']=='on',noteev_list)
         noteev_list = filter(lambda i:i['tick1']>min_tick,noteev_list)
@@ -67,10 +91,13 @@ class NoteState(null_state.NullState):
         self.matric_screen_size = screen_size
         self.matric_cell_width_phii = self.ui_cell_width / common.PHI
 
+        self.matric_ticks_per_beat = self.runtime.midi_data['ticks_per_beat']
+
         self.matric_max_pitch = track_data['max_pitch'] + 2
         self.matric_min_pitch = track_data['min_pitch'] - 2
         pitch_diff = self.matric_max_pitch - self.matric_min_pitch
         self.matric_note_rail_x0 = (screen_size[0]-pitch_diff*self.ui_cell_width//4)//2
+        self.matric_note_rail_x1 = self.matric_note_rail_x0+pitch_diff*self.ui_cell_width//4
 
         self.matric_note_rail_bg_rect_data_list = []
         pitch = self.matric_min_pitch
@@ -200,7 +227,7 @@ class NoteState(null_state.NullState):
 
     def tick_to_y(self,tick):
         ret = tick
-        ret /= self.runtime.midi_data['ticks_per_beat']
+        ret /= self.matric_ticks_per_beat
         ret *= self.ui_cell_width
         ret -= self.vision_offset_y
         ret += self.matric_y0
@@ -211,5 +238,5 @@ class NoteState(null_state.NullState):
         ret -= self.matric_y0
         ret += self.vision_offset_y
         ret /= self.ui_cell_width
-        ret *= self.runtime.midi_data['ticks_per_beat']
+        ret *= self.matric_ticks_per_beat
         return ret

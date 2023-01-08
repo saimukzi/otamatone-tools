@@ -18,6 +18,7 @@ def track_to_data(track,ticks_per_beat):
     track_data['noteev_list'] = track_to_noteev_list(track)
     end_tick = track_data['noteev_list'][-1]['tick']
     track_data['bar_list']   = track_to_bar_list(track,end_tick,ticks_per_beat)
+    track_data['bar_set']    = set(track_data['bar_list'])
     track_data['tempo_list'] = track_to_tempo_list(track,end_tick,ticks_per_beat)
 
     max_pitch = track_data['noteev_list']
