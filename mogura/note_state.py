@@ -12,9 +12,11 @@ class NoteState(null_state.NullState):
         super().__init__(runtime)
         self.id = 'NOTE'
 
-        self.ui_cell_width = 64
-        self.ui_line0_width = 2
-        self.ui_line1_width = 4
+        self.ui_zoom_level = 12
+
+        # self.matric_cell_width = 64
+        # self.matric_line0_width = 2
+        # self.matric_line1_width = 4
 
         self.vision_offset_y = 0
 
@@ -23,8 +25,8 @@ class NoteState(null_state.NullState):
         
         track_data = self.runtime.midi_data['track_list'][0]
         ticks_per_beat = self.matric_ticks_per_beat
-        min_tick = math.floor(self.y_to_tick(-self.ui_cell_width))
-        max_tick = math.ceil(self.y_to_tick(self.matric_screen_size[1]+self.ui_cell_width))
+        min_tick = math.floor(self.y_to_tick(-self.matric_cell_width))
+        max_tick = math.ceil(self.y_to_tick(self.matric_screen_size[1]+self.matric_cell_width))
         
         # color note rail bg
         for matric_note_rail_bg_rect_data in self.matric_note_rail_bg_rect_data_list:
@@ -33,19 +35,19 @@ class NoteState(null_state.NullState):
 
         # time horizontal line
         bar_set = self.runtime.midi_data['track_list'][0]['bar_set']
-        y0 = -self.ui_line0_width//2
-        y1 = -self.ui_line1_width//2
+        y0 = -self.matric_line0_width//2
+        y1 = -self.matric_line1_width//2
         w = self.matric_note_rail_x1-self.matric_note_rail_x0
         for tick in range(min_tick//ticks_per_beat*ticks_per_beat,max_tick,ticks_per_beat):
             y = self.tick_to_y(tick)
             if tick in bar_set:
                 screen.fill(
-                    rect=(self.matric_note_rail_x0,y+y1,w,self.ui_line1_width),
+                    rect=(self.matric_note_rail_x0,y+y1,w,self.matric_line1_width),
                     color=(128,128,128,255),
                 )
             else:
                 screen.fill(
-                    rect=(self.matric_note_rail_x0,y+y0,w,self.ui_line0_width),
+                    rect=(self.matric_note_rail_x0,y+y0,w,self.matric_line0_width),
                     color=(255,255,255,255),
                 )
 
@@ -91,16 +93,20 @@ class NoteState(null_state.NullState):
         midi_data = self.runtime.midi_data
         track_data = midi_data['track_list'][0]
 
+        self.matric_cell_width = max(round(2 ** (self.ui_zoom_level/2)),1)
+        self.matric_line0_width = max(self.matric_cell_width//32,1)
+        self.matric_line1_width = max(self.matric_cell_width//16,1)
+
         self.matric_screen_size = screen_size
-        self.matric_cell_width_phii = self.ui_cell_width / common.PHI
+        self.matric_cell_width_phii = self.matric_cell_width / common.PHI
 
         self.matric_ticks_per_beat = self.runtime.midi_data['ticks_per_beat']
 
         self.matric_max_pitch = track_data['max_pitch'] + 2
         self.matric_min_pitch = track_data['min_pitch'] - 2
         pitch_diff = self.matric_max_pitch - self.matric_min_pitch
-        self.matric_note_rail_x0 = (screen_size[0]-pitch_diff*self.ui_cell_width//4)//2
-        self.matric_note_rail_x1 = self.matric_note_rail_x0+pitch_diff*self.ui_cell_width//4
+        self.matric_note_rail_x0 = (screen_size[0]-pitch_diff*self.matric_cell_width//4)//2
+        self.matric_note_rail_x1 = self.matric_note_rail_x0+pitch_diff*self.matric_cell_width//4
 
         self.matric_note_rail_bg_rect_data_list = []
         pitch = self.matric_min_pitch
@@ -114,8 +120,8 @@ class NoteState(null_state.NullState):
             pitch1 += PITCH_A4
             pitch1 -= 300
             pitch1 = min(pitch1,self.matric_max_pitch)
-            x1 = self.matric_note_rail_x0 + (self.matric_max_pitch-pitch )*self.ui_cell_width // 4
-            x0 = self.matric_note_rail_x0 + (self.matric_max_pitch-pitch1)*self.ui_cell_width // 4
+            x1 = self.matric_note_rail_x0 + (self.matric_max_pitch-pitch )*self.matric_cell_width // 4
+            x0 = self.matric_note_rail_x0 + (self.matric_max_pitch-pitch1)*self.matric_cell_width // 4
             c = pitch
             c += 300
             c -= PITCH_A4
@@ -144,7 +150,7 @@ class NoteState(null_state.NullState):
             p += 300
             p -= PITCH_A4
             p %= 12
-            c,w = (128,self.ui_line1_width) if p == 0 else (192,self.ui_line0_width)
+            c,w = (128,self.matric_line1_width) if p == 0 else (192,self.matric_line0_width)
             x = self.pitch_to_x(pitch)
             # self.matric_note_rail_pitch_line_data_list.append({
             #     'start_pos': (x, 0),
@@ -158,80 +164,80 @@ class NoteState(null_state.NullState):
             })
             pitch += 4
 
-        self.matric_y0 = math.floor(self.ui_cell_width*common.PHI)
+        self.matric_y0 = math.floor(self.matric_cell_width*common.PHI)
 
         self.matric_note_img_data_dict = {}
 
         self.matric_note_img_data_dict[0] = {}
-        with Image.new('RGBA', (self.ui_cell_width*4,self.ui_cell_width*4), (255,255,255,0)) as pil_img4:
+        with Image.new('RGBA', (self.matric_cell_width*4,self.matric_cell_width*4), (255,255,255,0)) as pil_img4:
             pil_draw = ImageDraw.Draw(pil_img4)
-            xy0 = math.floor((self.ui_cell_width-self.matric_cell_width_phii)*2)
-            xy1 = math.ceil((self.ui_cell_width+self.matric_cell_width_phii)*2)
-            pil_draw.line((xy0,xy0,xy1,xy1),fill=(0,0,0,255),width=self.ui_line1_width*4)
-            pil_draw.line((xy0,xy1,xy1,xy0),fill=(0,0,0,255),width=self.ui_line1_width*4)
-            with pil_img4.resize((self.ui_cell_width,self.ui_cell_width)) as pil_img:
+            xy0 = math.floor((self.matric_cell_width-self.matric_cell_width_phii)*2)
+            xy1 = math.ceil((self.matric_cell_width+self.matric_cell_width_phii)*2)
+            pil_draw.line((xy0,xy0,xy1,xy1),fill=(0,0,0,255),width=self.matric_line1_width*4)
+            pil_draw.line((xy0,xy1,xy1,xy0),fill=(0,0,0,255),width=self.matric_line1_width*4)
+            with pil_img4.resize((self.matric_cell_width,self.matric_cell_width)) as pil_img:
                 img_data = pil_img.tobytes()
-                pyg_img = pygame.image.fromstring(img_data, (self.ui_cell_width,self.ui_cell_width), pil_img.mode)
+                pyg_img = pygame.image.fromstring(img_data, (self.matric_cell_width,self.matric_cell_width), pil_img.mode)
         self.matric_note_img_data_dict[0]['surface'] = pyg_img
-        self.matric_note_img_data_dict[0]['offset_x'] = -self.ui_cell_width//2
-        self.matric_note_img_data_dict[0]['offset_y'] = -self.ui_cell_width//2
+        self.matric_note_img_data_dict[0]['offset_x'] = -self.matric_cell_width//2
+        self.matric_note_img_data_dict[0]['offset_y'] = -self.matric_cell_width//2
 
         self.matric_note_img_data_dict[1] = {}
-        x1 = self.ui_cell_width * 7 // 8
-        with Image.new('RGBA', (self.ui_cell_width*4,self.ui_cell_width*4), (255,255,255,0)) as pil_img4:
+        x1 = self.matric_cell_width * 7 // 8
+        with Image.new('RGBA', (self.matric_cell_width*4,self.matric_cell_width*4), (255,255,255,0)) as pil_img4:
             pil_draw = ImageDraw.Draw(pil_img4)
             x41 = x1 * 4
             x40 = math.floor((x1-self.matric_cell_width_phii)*4)
-            y40 = math.floor((self.ui_cell_width-self.matric_cell_width_phii)*2)
-            y41 = math.floor(self.ui_cell_width*2)
-            y42 = math.ceil((self.ui_cell_width+self.matric_cell_width_phii)*2)
+            y40 = math.floor((self.matric_cell_width-self.matric_cell_width_phii)*2)
+            y41 = math.floor(self.matric_cell_width*2)
+            y42 = math.ceil((self.matric_cell_width+self.matric_cell_width_phii)*2)
             p40,p41,p42 = (x40,y40),(x41,y41),(x40,y42)
-            pil_draw.line((p40,p41,p42,p40),fill=(0,0,0,255),width=self.ui_line1_width*4)
-            with pil_img4.resize((self.ui_cell_width,self.ui_cell_width)) as pil_img:
+            pil_draw.line((p40,p41,p42,p40),fill=(0,0,0,255),width=self.matric_line1_width*4)
+            with pil_img4.resize((self.matric_cell_width,self.matric_cell_width)) as pil_img:
                 img_data = pil_img.tobytes()
-                pyg_img = pygame.image.fromstring(img_data, (self.ui_cell_width,self.ui_cell_width), pil_img.mode)
+                pyg_img = pygame.image.fromstring(img_data, (self.matric_cell_width,self.matric_cell_width), pil_img.mode)
         self.matric_note_img_data_dict[1]['surface'] = pyg_img
-        self.matric_note_img_data_dict[1]['offset_x'] = -x1+self.ui_cell_width//4
-        self.matric_note_img_data_dict[1]['offset_y'] = -self.ui_cell_width//2
+        self.matric_note_img_data_dict[1]['offset_x'] = -x1+self.matric_cell_width//4
+        self.matric_note_img_data_dict[1]['offset_y'] = -self.matric_cell_width//2
 
         self.matric_note_img_data_dict[2] = {}
-        with Image.new('RGBA', (self.ui_cell_width*4,self.ui_cell_width*4), (255,255,255,0)) as pil_img4:
+        with Image.new('RGBA', (self.matric_cell_width*4,self.matric_cell_width*4), (255,255,255,0)) as pil_img4:
             pil_draw = ImageDraw.Draw(pil_img4)
-            xy0 = math.floor((self.ui_cell_width-self.matric_cell_width_phii)*2)
-            xy1 = math.ceil((self.ui_cell_width+self.matric_cell_width_phii)*2)
-            pil_draw.ellipse((xy0,xy0,xy1,xy1),outline=(0,0,0,255),width=self.ui_line1_width*4)
-            with pil_img4.resize((self.ui_cell_width,self.ui_cell_width)) as pil_img:
+            xy0 = math.floor((self.matric_cell_width-self.matric_cell_width_phii)*2)
+            xy1 = math.ceil((self.matric_cell_width+self.matric_cell_width_phii)*2)
+            pil_draw.ellipse((xy0,xy0,xy1,xy1),outline=(0,0,0,255),width=self.matric_line1_width*4)
+            with pil_img4.resize((self.matric_cell_width,self.matric_cell_width)) as pil_img:
                 img_data = pil_img.tobytes()
-                pyg_img = pygame.image.fromstring(img_data, (self.ui_cell_width,self.ui_cell_width), pil_img.mode)
+                pyg_img = pygame.image.fromstring(img_data, (self.matric_cell_width,self.matric_cell_width), pil_img.mode)
         self.matric_note_img_data_dict[2]['surface'] = pyg_img
-        self.matric_note_img_data_dict[2]['offset_x'] = -self.ui_cell_width//2
-        self.matric_note_img_data_dict[2]['offset_y'] = -self.ui_cell_width//2
+        self.matric_note_img_data_dict[2]['offset_x'] = -self.matric_cell_width//2
+        self.matric_note_img_data_dict[2]['offset_y'] = -self.matric_cell_width//2
 
         self.matric_note_img_data_dict[3] = {}
-        x0 = self.ui_cell_width * 1 // 8
-        with Image.new('RGBA', (self.ui_cell_width*4,self.ui_cell_width*4), (255,255,255,0)) as pil_img4:
+        x0 = self.matric_cell_width * 1 // 8
+        with Image.new('RGBA', (self.matric_cell_width*4,self.matric_cell_width*4), (255,255,255,0)) as pil_img4:
             pil_draw = ImageDraw.Draw(pil_img4)
             x40 = x0 * 4
             x41 = math.floor((x0+self.matric_cell_width_phii)*4)
-            y40 = math.floor((self.ui_cell_width-self.matric_cell_width_phii)*2)
-            y41 = math.floor(self.ui_cell_width*2)
-            y42 = math.ceil((self.ui_cell_width+self.matric_cell_width_phii)*2)
+            y40 = math.floor((self.matric_cell_width-self.matric_cell_width_phii)*2)
+            y41 = math.floor(self.matric_cell_width*2)
+            y42 = math.ceil((self.matric_cell_width+self.matric_cell_width_phii)*2)
             p40,p41,p42 = (x41,y40),(x40,y41),(x41,y42)
-            pil_draw.line((p40,p41,p42,p40),fill=(0,0,0,255),width=self.ui_line1_width*4)
-            with pil_img4.resize((self.ui_cell_width,self.ui_cell_width)) as pil_img:
+            pil_draw.line((p40,p41,p42,p40),fill=(0,0,0,255),width=self.matric_line1_width*4)
+            with pil_img4.resize((self.matric_cell_width,self.matric_cell_width)) as pil_img:
                 img_data = pil_img.tobytes()
-                pyg_img = pygame.image.fromstring(img_data, (self.ui_cell_width,self.ui_cell_width), pil_img.mode)
+                pyg_img = pygame.image.fromstring(img_data, (self.matric_cell_width,self.matric_cell_width), pil_img.mode)
         self.matric_note_img_data_dict[3]['surface'] = pyg_img
-        self.matric_note_img_data_dict[3]['offset_x'] = -x0-self.ui_cell_width//4
-        self.matric_note_img_data_dict[3]['offset_y'] = -self.ui_cell_width//2
+        self.matric_note_img_data_dict[3]['offset_x'] = -x0-self.matric_cell_width//4
+        self.matric_note_img_data_dict[3]['offset_y'] = -self.matric_cell_width//2
 
     def pitch_to_x(self,pitch):
-        return self.matric_note_rail_x0 + (self.matric_max_pitch-pitch )*self.ui_cell_width // 4
+        return self.matric_note_rail_x0 + (self.matric_max_pitch-pitch )*self.matric_cell_width // 4
 
     def tick_to_y(self,tick):
         ret = tick
         ret /= self.matric_ticks_per_beat
-        ret *= self.ui_cell_width
+        ret *= self.matric_cell_width
         ret -= self.vision_offset_y
         ret += self.matric_y0
         return ret
@@ -240,6 +246,6 @@ class NoteState(null_state.NullState):
         ret = y
         ret -= self.matric_y0
         ret += self.vision_offset_y
-        ret /= self.ui_cell_width
+        ret /= self.matric_cell_width
         ret *= self.matric_ticks_per_beat
         return ret
