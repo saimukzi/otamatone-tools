@@ -18,6 +18,7 @@ class Runtime:
         self.timer_pool = timer_pool.TimerPool()
         self.state_pool = state_pool.StatePool()
         self.screen_size = None
+        self.ui_zoom_level = 12
 
     def run(self):
         pygame.init()

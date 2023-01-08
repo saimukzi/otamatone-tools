@@ -34,9 +34,9 @@ class EditState(note_state.NoteState):
             mouse_screen_y = pygame.mouse.get_pos()[1]
             mouse_tick = self.y_to_tick(mouse_screen_y)
         
-            self.ui_zoom_level += event.y
-            self.ui_zoom_level = max(self.ui_zoom_level,4)
-            self.ui_zoom_level = min(self.ui_zoom_level,16)
+            self.runtime.ui_zoom_level += event.y
+            self.runtime.ui_zoom_level = max(self.runtime.ui_zoom_level,4)
+            self.runtime.ui_zoom_level = min(self.runtime.ui_zoom_level,16)
 
             self.update_ui_matrice()
 

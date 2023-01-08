@@ -12,12 +12,6 @@ class NoteState(null_state.NullState):
         super().__init__(runtime)
         self.id = 'NOTE'
 
-        self.ui_zoom_level = 12
-
-        # self.matric_cell_width = 64
-        # self.matric_line0_width = 2
-        # self.matric_line1_width = 4
-
         self.vision_offset_y = 0
 
     def screen_tick(self, screen, sec):
@@ -93,7 +87,7 @@ class NoteState(null_state.NullState):
         midi_data = self.runtime.midi_data
         track_data = midi_data['track_list'][0]
 
-        self.matric_cell_width = max(round(2 ** (self.ui_zoom_level/2)),1)
+        self.matric_cell_width = max(round(2 ** (self.runtime.ui_zoom_level/2)),1)
         self.matric_line0_width = max(self.matric_cell_width//32,1)
         self.matric_line1_width = max(self.matric_cell_width//16,1)
 
