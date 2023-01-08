@@ -18,7 +18,13 @@ class Runtime:
         self.timer_pool = timer_pool.TimerPool()
         self.state_pool = state_pool.StatePool()
         self.screen_size = None
+
         self.ui_zoom_level = 12
+        
+        self.play_beat0 = 0
+        self.play_beat1 = 0
+        self.empty_beat0 = 0
+        self.empty_beat1 = 0
 
     def run(self):
         pygame.init()
@@ -52,6 +58,10 @@ class Runtime:
             if event.type == pygame.DROPFILE:
                 file_path = event.file
                 self.midi_data = midi_data.path_to_data(file_path)
+                self.play_beat0 = 0
+                self.play_beat1 = self.midi_data['track_list'][0]['bar_list'][-1] // self.midi_data['ticks_per_beat']
+                self.empty_beat0 = 0
+                self.empty_beat1 = 0
                 # print(self.midi_data)
                 self.state_pool.set_active('EDIT')
                 self.state_pool.on_midi_update()
