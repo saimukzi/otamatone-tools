@@ -18,7 +18,7 @@ class EditState(note_state.NoteState):
         super().screen_tick(screen, sec)
 
     def event_tick(self, event, sec):
-        print(event)
+        # print(event)
         if event.type == pygame.KEYDOWN and event.key == pygame.K_RCTRL:
             self.rctrl_down = True
         if event.type == pygame.KEYUP and event.key == pygame.K_RCTRL:
