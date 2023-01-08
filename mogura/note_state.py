@@ -33,7 +33,7 @@ class NoteState(null_state.NullState):
         y1 = -self.matric_line1_width//2
         w = self.matric_note_rail_x1-self.matric_note_rail_x0
         for tick in range(min_tick//ticks_per_beat*ticks_per_beat,max_tick,ticks_per_beat):
-            y = self.tick_to_y(tick)
+            y = round(self.tick_to_y(tick))
             if tick in bar_set:
                 screen.fill(
                     rect=(self.matric_note_rail_x0,y+y1,w,self.matric_line1_width),
@@ -59,7 +59,7 @@ class NoteState(null_state.NullState):
         for noteev in noteev_list:
             pitch = noteev['pitch']
             x = self.pitch_to_x(noteev['pitch'])
-            y = self.tick_to_y(noteev['tick0'])
+            y = round(self.tick_to_y(noteev['tick0']))
             p = (pitch + 300 - PITCH_A4) % 4
             if p in self.matric_note_img_data_dict:
                 matric_note_img_data = self.matric_note_img_data_dict[p]
@@ -68,7 +68,7 @@ class NoteState(null_state.NullState):
                     dest=(x+matric_note_img_data['offset_x'],y+matric_note_img_data['offset_y']),
                 )
 
-        pygame.display.flip()
+        # pygame.display.flip()
 
     def event_tick(self, event, sec):
         pass
