@@ -21,3 +21,6 @@ class NullState:
 
     def on_screen_change(self, screen_size):
         pass
+
+    def on_midi_update(self):
+        pass

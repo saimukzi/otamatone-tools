@@ -53,6 +53,7 @@ class Runtime:
                 self.midi_data = midi_data.path_to_data(file_path)
                 # print(self.midi_data)
                 self.state_pool.set_active('EDIT')
+                self.state_pool.on_midi_update()
             self.state_pool.event_tick(event, sec)
 
 

@@ -32,3 +32,6 @@ class StatePool:
         if self.active_state is None: return
         self.active_state.on_screen_change(screen_size)
 
+    def on_midi_update(self):
+        if self.active_state is None: return
+        self.active_state.on_midi_update()
