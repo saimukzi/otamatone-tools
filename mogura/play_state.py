@@ -108,15 +108,8 @@ class PlayState(note_state.NoteState):
         tempo_list[0]['sec6tpb1'] = play_sec6tpb_list[3] - play_sec6tpb_list[0]
         self.track_data['tempo_list'] = tempo_list
 
-        max_pitch = self.track_data['noteev_list']
-        max_pitch = map(lambda i:i['pitch'],max_pitch)
-        max_pitch = max(max_pitch)
-        self.track_data['max_pitch'] = max_pitch
-    
-        min_pitch = self.track_data['noteev_list']
-        min_pitch = map(lambda i:i['pitch'],min_pitch)
-        min_pitch = min(min_pitch)
-        self.track_data['min_pitch'] = min_pitch
+        self.track_data['max_pitch'] = src_track_data['max_pitch']
+        self.track_data['min_pitch'] = src_track_data['min_pitch']
         
         self.track_data['sec6tpb'] = play_sec6tpb_list[3]-play_sec6tpb_list[0]
 
