@@ -1,4 +1,5 @@
 import common
+import copy
 import math
 import pygame
 import null_state
@@ -12,13 +13,14 @@ class NoteState(null_state.NullState):
         super().__init__(runtime)
         self.id = 'NOTE'
 
-        self.vision_offset_y = 0
+        #self.vision_offset_y = 0
 
 
-    def draw_note_rail(self, screen, vision_offset_y, track_data):
+    def draw_note_rail(self, screen, vision_offset_y):
+        track_data = self.matric_track_data
         ticks_per_beat = self.matric_ticks_per_beat
-        min_tick = math.floor(self.y_to_tick(-self.matric_cell_width))
-        max_tick = math.ceil(self.y_to_tick(self.matric_screen_size[1]+self.matric_cell_width))
+        min_tick = math.floor(self.y_to_tick(-self.matric_cell_width,vision_offset_y))
+        max_tick = math.ceil(self.y_to_tick(self.matric_screen_size[1]+self.matric_cell_width,vision_offset_y))
         
         # color note rail bg
         for matric_note_rail_bg_rect_data in self.matric_note_rail_bg_rect_data_list:
@@ -26,12 +28,12 @@ class NoteState(null_state.NullState):
             screen.fill(**matric_note_rail_bg_rect_data)
 
         # time horizontal line
-        bar_set = self.runtime.midi_data['track_list'][0]['bar_set']
+        bar_set = track_data['bar_set']
         y0 = -self.matric_line0_width//2
         y1 = -self.matric_line1_width//2
         w = self.matric_note_rail_x1-self.matric_note_rail_x0
         for tick in range(min_tick//ticks_per_beat*ticks_per_beat,max_tick,ticks_per_beat):
-            y = round(self.tick_to_y(tick))
+            y = round(self.tick_to_y(tick,vision_offset_y))
             if tick in bar_set:
                 screen.fill(
                     rect=(self.matric_note_rail_x0,y+y1,w,self.matric_line1_width),
@@ -57,13 +59,13 @@ class NoteState(null_state.NullState):
         for noteev in noteev_list:
             pitch = noteev['pitch']
             x = self.pitch_to_x(noteev['pitch'])
-            y = round(self.tick_to_y(noteev['tick0']))
+            y0 = round(noteev['y0']-vision_offset_y+self.matric_y0)
             p = (pitch + 300 - PITCH_A4) % 4
             if p in self.matric_note_img_data_dict:
                 matric_note_img_data = self.matric_note_img_data_dict[p]
                 screen.blit(
                     source=matric_note_img_data['surface'],
-                    dest=(x+matric_note_img_data['offset_x'],y+matric_note_img_data['offset_y']),
+                    dest=(x+matric_note_img_data['offset_x'],y0+matric_note_img_data['offset_y']),
                 )
 
         # pygame.display.flip()
@@ -83,7 +85,9 @@ class NoteState(null_state.NullState):
     def update_ui_matrice(self):
         screen_size = pygame.display.get_window_size()
         midi_data = self.runtime.midi_data
-        track_data = midi_data['track_list'][0]
+        #track_data = midi_data['track_list'][0]
+        track_data = copy.deepcopy(self.track_data)
+        self.matric_track_data = track_data
 
         self.matric_cell_width = max(round(2 ** (self.runtime.ui_zoom_level/2)),1)
         self.matric_line0_width = max(self.matric_cell_width//32,1)
@@ -223,21 +227,29 @@ class NoteState(null_state.NullState):
         self.matric_note_img_data_dict[3]['offset_x'] = -x0-self.matric_cell_width//4
         self.matric_note_img_data_dict[3]['offset_y'] = -self.matric_cell_width//2
 
+        for noteev in track_data['noteev_list']:
+            noteev['y'] = noteev['tick']*self.matric_cell_width/self.matric_ticks_per_beat
+            if 'tick0' in noteev:
+                noteev['y0'] = noteev['tick0']*self.matric_cell_width/self.matric_ticks_per_beat
+            if 'tick1' in noteev:
+                noteev['y1'] = noteev['tick1']*self.matric_cell_width/self.matric_ticks_per_beat
+
+
     def pitch_to_x(self,pitch):
         return self.matric_note_rail_x0 + (self.matric_max_pitch-pitch )*self.matric_cell_width // 4
 
-    def tick_to_y(self,tick):
+    def tick_to_y(self,tick,vision_offset_y):
         ret = tick
         ret /= self.matric_ticks_per_beat
         ret *= self.matric_cell_width
-        ret -= self.vision_offset_y
+        ret -= vision_offset_y
         ret += self.matric_y0
         return ret
 
-    def y_to_tick(self,y):
+    def y_to_tick(self,y,vision_offset_y):
         ret = y
         ret -= self.matric_y0
-        ret += self.vision_offset_y
+        ret += vision_offset_y
         ret /= self.matric_cell_width
         ret *= self.matric_ticks_per_beat
         return ret

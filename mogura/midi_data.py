@@ -147,3 +147,31 @@ def track_to_tempo_list(track,end_tick,ticks_per_beat):
     ret_tempo_list = list(ret_tempo_list)
     
     return ret_tempo_list
+
+
+def tick_to_sec6tpb(tick, tempo_list):
+    if tick <= 0:
+        tempo = tempo_list[0]
+    if tick >= tempo_list[-1]['tick0']:
+        tempo = tempo_list[-1]
+    else:
+        tempo = tempo_list
+        tempo = filter(lambda i:i['tick0']<=tick,tempo)
+        tempo = filter(lambda i:i['tick1']>tick,tempo)
+        assert(len(tempo))
+        tempo = tempo[0]
+    return (tick-tempo['tick0'])*tempo['tempo']+tempo['sec6tpb0']
+
+
+def sec6tpb_to_tick(sec6tpb, tempo_list):
+    if sec6tpb <= 0:
+        tempo = tempo_list[0]
+    if sec6tpb >= tempo_list[-1]['sec6tpb0']:
+        tempo = tempo_list[-1]
+    else:
+        tempo = tempo_list
+        tempo = filter(lambda i:i['sec6tpb0']<=tick,sec6tpb)
+        tempo = filter(lambda i:i['sec6tpb1']>tick,sec6tpb)
+        assert(len(tempo))
+        tempo = tempo[0]
+    return (sec6tpb-tempo['sec6tpb0'])/tempo['tempo']+tempo['tick0']

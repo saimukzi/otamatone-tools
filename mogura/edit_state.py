@@ -13,17 +13,19 @@ class EditState(note_state.NoteState):
         self.id = 'EDIT'
         self.rctrl_down = False
         self.lctrl_down = False
+        
+        self.vision_offset_y = 0
 
     def screen_tick(self, screen, sec):
         super().screen_tick(screen, sec)
 
-        self.draw_note_rail(screen, self.vision_offset_y, self.runtime.midi_data['track_list'][0])
+        self.draw_note_rail(screen, self.vision_offset_y)
 
         matric_screen_size = self.matric_screen_size
         ticks_per_beat = self.matric_ticks_per_beat
         
         play_tick_itr = map(lambda i:i*ticks_per_beat,self.runtime.play_beat_list)
-        play_y0_list  = list(map(lambda i:round(self.tick_to_y(i)),play_tick_itr))
+        play_y0_list  = list(map(lambda i:round(self.tick_to_y(i,self.vision_offset_y)),play_tick_itr))
 
         x0 = self.matric_note_rail_x0 - self.matric_cell_width
         x1 = self.matric_note_rail_x0 - self.matric_cell_width // 2
@@ -56,6 +58,8 @@ class EditState(note_state.NoteState):
 
     def event_tick(self, event, sec):
         # print(event)
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+            self.runtime.state_pool.set_active('PLAY')
         if event.type == pygame.KEYDOWN and event.key == pygame.K_RCTRL:
             self.rctrl_down = True
         if event.type == pygame.KEYUP and event.key == pygame.K_RCTRL:
@@ -80,7 +84,7 @@ class EditState(note_state.NoteState):
             self.vision_offset_y -= event.y * 60
         if event.type == pygame.MOUSEWHEEL and self.is_ctrl_down():
             mouse_screen_y = pygame.mouse.get_pos()[1]
-            mouse_tick = self.y_to_tick(mouse_screen_y)
+            mouse_tick = self.y_to_tick(mouse_screen_y, self.vision_offset_y)
         
             self.runtime.ui_zoom_level += event.y
             self.runtime.ui_zoom_level = max(self.runtime.ui_zoom_level,4)
@@ -98,12 +102,17 @@ class EditState(note_state.NoteState):
     def is_ctrl_down(self):
         return self.rctrl_down or self.lctrl_down
 
+    def on_active(self):
+        self.track_data = self.runtime.midi_data['track_list'][0]
+        super().on_active()
+
     def on_midi_update(self):
+        self.track_data = self.runtime.midi_data['track_list'][0]
         super().on_midi_update()
         self.vision_offset_y = 0
 
     def y_to_beat(self,y):
-        ret = self.y_to_tick(y)
+        ret = self.y_to_tick(y, self.vision_offset_y)
         ret /= self.matric_ticks_per_beat
         ret = round(ret)
         return ret

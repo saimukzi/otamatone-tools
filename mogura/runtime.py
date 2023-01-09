@@ -3,6 +3,7 @@ import edit_state
 import freq_timer
 import midi_data
 import null_state
+import play_state
 import pygame
 import state_pool
 import time
@@ -34,6 +35,7 @@ class Runtime:
 
         self.state_pool.add_state(null_state.NullState(self))
         self.state_pool.add_state(edit_state.EditState(self))
+        self.state_pool.add_state(play_state.PlayState(self))
         self.state_pool.set_active('NULL')
 
         self.timer_pool.run()
