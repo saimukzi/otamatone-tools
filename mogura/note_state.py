@@ -14,10 +14,8 @@ class NoteState(null_state.NullState):
 
         self.vision_offset_y = 0
 
-    def screen_tick(self, screen, sec):
-        screen.fill((255,255,255))
-        
-        track_data = self.runtime.midi_data['track_list'][0]
+
+    def draw_note_rail(self, screen, vision_offset_y, track_data):
         ticks_per_beat = self.matric_ticks_per_beat
         min_tick = math.floor(self.y_to_tick(-self.matric_cell_width))
         max_tick = math.ceil(self.y_to_tick(self.matric_screen_size[1]+self.matric_cell_width))

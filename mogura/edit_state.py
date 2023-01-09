@@ -16,6 +16,9 @@ class EditState(note_state.NoteState):
 
     def screen_tick(self, screen, sec):
         super().screen_tick(screen, sec)
+
+        self.draw_note_rail(screen, self.vision_offset_y, self.runtime.midi_data['track_list'][0])
+
         matric_screen_size = self.matric_screen_size
         ticks_per_beat = self.matric_ticks_per_beat
         
