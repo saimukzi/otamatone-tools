@@ -44,8 +44,9 @@ class PlayState(note_state.NoteState):
         self.track_data = {}
 
         noteev_list = src_track_data['noteev_list']
-        noteev_list = filter(lambda i:i['tick']>=play_tick_list[1],noteev_list)
-        noteev_list = filter(lambda i:i['tick']<=play_tick_list[2],noteev_list)
+        noteev_list = filter(lambda i:i['type']=='on', noteev_list)
+        noteev_list = filter(lambda i:i['tick1']>=play_tick_list[1],noteev_list)
+        noteev_list = filter(lambda i:i['tick0']<play_tick_list[2],noteev_list)
         noteev_list = list(noteev_list)
         noteev_list = copy.deepcopy(noteev_list)
         for noteev in noteev_list:
@@ -55,6 +56,8 @@ class PlayState(note_state.NoteState):
             noteev['sec6tpb']  -= play_sec6tpb_list[0]
             if 'sec6tpb0' in noteev: noteev['sec6tpb0'] -= play_sec6tpb_list[0]
             if 'sec6tpb1' in noteev: noteev['sec6tpb1'] -= play_sec6tpb_list[0]
+
+        play_noteev_list = copy.deepcopy(noteev_list)
 
         noteev_list0 = copy.deepcopy(noteev_list)
         for noteev in noteev_list0:
@@ -113,6 +116,30 @@ class PlayState(note_state.NoteState):
         
         self.track_data['sec6tpb'] = play_sec6tpb_list[3]-play_sec6tpb_list[0]
 
+        min_sec6tpb = play_sec6tpb_list[1]-play_sec6tpb_list[0]
+        max_sec6tpb = play_sec6tpb_list[2]-play_sec6tpb_list[0]
+        sec6tpb_30 = play_sec6tpb_list[3]-play_sec6tpb_list[0]
+        play_noteev_list = filter(lambda i:i['type']=='on',play_noteev_list)
+        play_noteev_list = list(play_noteev_list)
+        for noteev in play_noteev_list:
+            noteev['sec6tpb0'] = max(noteev['sec6tpb0'],min_sec6tpb)
+            noteev['sec6tpb1'] = min(noteev['sec6tpb1'],max_sec6tpb)
+            noteev['sec6tpb']  = noteev['sec6tpb0']
+            noteev['sort_key'] = (noteev['sec6tpb'],1,noteev['pitch'])
+        play_noteev_off_list = copy.deepcopy(play_noteev_list)
+        for noteev in play_noteev_off_list:
+            noteev['type'] = 'off'
+            noteev['sec6tpb']  = noteev['sec6tpb1']
+            noteev['sort_key'] = (noteev['sec6tpb'],0,noteev['pitch'])
+        play_noteev_list = play_noteev_list + play_noteev_off_list
+        play_noteev_list = sorted(play_noteev_list, key=lambda i:i['sort_key'])
+
+        self.runtime.midi_player.play(play_noteev_list,sec6tpb_30,self.runtime.midi_data['ticks_per_beat'],self.start_sec-0.15)
+
+        super().on_active()
+
+    def on_inactive(self):
+        self.runtime.midi_player.stop()
         super().on_active()
 
     def event_tick(self, event, sec):

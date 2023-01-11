@@ -2,6 +2,7 @@ import edit_state
 import edit_state
 import freq_timer
 import midi_data
+import midi_player
 import null_state
 import play_state
 import pygame
@@ -29,7 +30,10 @@ class Runtime:
     
         self.screen = pygame.display.set_mode((1280,720),flags=pygame.RESIZABLE)
         
+        self.midi_player = midi_player.MidiPlayer()
+        
         t0 = time.time()
+        self.timer_pool.add_timer(self.midi_player)
         self.timer_pool.add_timer(freq_timer.FreqTimer(self, t0, FPS, lambda sec: self.screen_tick(sec)))
         self.timer_pool.add_timer(freq_timer.FreqTimer(self, t0+1/2/EPS, EPS, lambda sec: self.event_tick(sec)))
 

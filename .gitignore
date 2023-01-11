@@ -1,6 +1,7 @@
 /.project
 /.settings
 *.old
+.python-version
 
 venv
 *.mid
