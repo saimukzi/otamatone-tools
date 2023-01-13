@@ -72,11 +72,12 @@ def track_to_noteev_list(track):
     
     cp_to_noteev_dict = {}
     for noteev in ret_noteev_list:
+        print(noteev)
         if noteev['type'] == 'on':
-            cp = (noteev['channel'],'pitch')
+            cp = (noteev['channel'],noteev['pitch'])
             cp_to_noteev_dict[cp] = noteev
         elif noteev['type'] == 'off':
-            cp = (noteev['channel'],'pitch')
+            cp = (noteev['channel'],noteev['pitch'])
             noteev0 = cp_to_noteev_dict[cp]
             noteev0['tick1'] = noteev['tick']
             noteev0['sec6tpb1'] = noteev['sec6tpb']
