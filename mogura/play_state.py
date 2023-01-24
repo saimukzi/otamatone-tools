@@ -142,6 +142,9 @@ class PlayState(note_state.NoteState):
         play_track_data = midi_data.track_data_chop_tick(play_track_data, *play_tick_list)
         play_track_data = midi_data.track_data_move_tick(play_track_data, -play_tick_list[0])
         play_track_data = midi_data.track_data_move_sec6tpb(play_track_data, -play_sec6tpb_list[0])
+        
+        play_track_data = midi_data.track_data_change_speed(play_track_data, self.runtime.speed_factor)
+        play_sec6tpb_list = list(map(lambda i:i*self.runtime.speed_factor,play_sec6tpb_list))
 
         tick_30    = play_tick_list[3]-play_tick_list[0]
         sec6tpb_30 = play_sec6tpb_list[3]-play_sec6tpb_list[0]
@@ -153,9 +156,9 @@ class PlayState(note_state.NoteState):
         display_track_data1 = copy.deepcopy(display_track_data)
         display_track_data1 = midi_data.track_data_move_tick(display_track_data1, tick_30)
         display_track_data1 = midi_data.track_data_move_sec6tpb(display_track_data1, sec6tpb_30)
-        for dm in display_track_data0['noteev_list']: dm['src']='0'
-        for dm in display_track_data['noteev_list']:  dm['src']='1'
-        for dm in display_track_data1['noteev_list']: dm['src']='2'
+        # for dm in display_track_data0['noteev_list']: dm['src']='0'
+        # for dm in display_track_data['noteev_list']:  dm['src']='1'
+        # for dm in display_track_data1['noteev_list']: dm['src']='2'
         display_track_data = midi_data.merge_track_data([display_track_data,display_track_data0,display_track_data1])
 
         self.track_data = display_track_data

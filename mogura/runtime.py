@@ -24,6 +24,7 @@ class Runtime:
         self.ui_zoom_level = 12
         
         self.play_beat_list = [0]*4
+        self.speed_factor = 4 # >1: slower, <1: faster
 
     def run(self):
         pygame.init()

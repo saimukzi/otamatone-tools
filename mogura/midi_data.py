@@ -385,3 +385,18 @@ def merge_track_data(src_track_data_list):
     output_track_data['min_pitch'] = min(map(lambda i:i['min_pitch'],src_track_data_list))
     
     return output_track_data
+
+# speed_factor: >1: slower, <1: faster
+def track_data_change_speed(track_data, speed_factor):
+    out_track_data = copy.deepcopy(track_data)
+    for noteev in out_track_data['noteev_list']:
+        if 'sec6tpb'  in noteev: noteev['sec6tpb']  *= speed_factor
+        if 'sec6tpb0' in noteev: noteev['sec6tpb0'] *= speed_factor
+        if 'sec6tpb1' in noteev: noteev['sec6tpb1'] *= speed_factor
+
+    for tempo in out_track_data['tempo_list']:
+        tempo['tempo']    *= speed_factor
+        tempo['sec6tpb0'] *= speed_factor
+        tempo['sec6tpb1'] *= speed_factor
+
+    return out_track_data
