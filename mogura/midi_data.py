@@ -236,11 +236,12 @@ def _track_data_chop_time_noteev_filter(start_tick, end_tick):
     def _ret(noteev):
         if noteev['type'] != 'on': return False
         if noteev['tick0'] >= end_tick:   return False
-        if noteev['tick1'] <  start_tick: return False
+        if noteev['tick1'] <= start_tick: return False
         return True
     return _ret
 
 def _on_noteev_to_off_noteev(noteev):
+    #print(f'noteev={noteev}')
     ret_data = {
         'tick':noteev['tick1'],
         'sec6tpb':noteev['sec6tpb1'],
@@ -329,7 +330,6 @@ def merge_track_data(src_track_data_list):
     noteev_list = itertools.chain(*list(map(lambda i:i['noteev_list'],src_track_data_list)))
     noteev_list = sorted(noteev_list, key=_noteev_sort_key)
     on_channel_pitch_set = set()
-    #print(noteev_list)
     #print(json.dumps(noteev_list,indent=2))
     for noteev in noteev_list:
         #print(f'BYFKBGRYBS noteev={noteev}')
@@ -360,7 +360,7 @@ def merge_track_data(src_track_data_list):
     #    assert(tempo0['tick1']==tempo1['tick0'])
     #    assert(tempo0['sec6tpb1']==tempo1['sec6tpb0'])
     #output_track_data['tempo_list'] = tempo_list
-    #print(f'AVYZPMFEOG src_tempo_list={src_tempo_list}')
+    print(f'AVYZPMFEOG src_tempo_list={src_tempo_list}')
     out_tempo_list = []
     out_tempo_list.append(src_tempo_list[0])
     for src_tempo in src_tempo_list[1:]:

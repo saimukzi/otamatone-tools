@@ -143,9 +143,6 @@ class PlayState(note_state.NoteState):
         play_track_data = midi_data.track_data_move_tick(play_track_data, -play_tick_list[0])
         play_track_data = midi_data.track_data_move_sec6tpb(play_track_data, -play_sec6tpb_list[0])
         
-        play_track_data = midi_data.track_data_change_speed(play_track_data, self.runtime.speed_factor)
-        play_sec6tpb_list = list(map(lambda i:i*self.runtime.speed_factor,play_sec6tpb_list))
-
         tick_30    = play_tick_list[3]-play_tick_list[0]
         sec6tpb_30 = play_sec6tpb_list[3]-play_sec6tpb_list[0]
         #print(f'YDXUFZLYQK tick_30={tick_30}, sec6tpb_30={sec6tpb_30}, play_tick_list={play_tick_list}, play_sec6tpb_list={play_sec6tpb_list}')
@@ -162,11 +159,14 @@ class PlayState(note_state.NoteState):
         display_track_data = midi_data.merge_track_data([display_track_data,display_track_data0,display_track_data1])
 
         play_track_data = midi_data.track_data_add_woodblock(play_track_data)
+        
+        play_track_data = midi_data.track_data_change_speed(play_track_data, self.runtime.speed_factor)
+        display_track_data = midi_data.track_data_change_speed(display_track_data, self.runtime.speed_factor)
 
         self.track_data = display_track_data
-        self.loop_sec6tpb = sec6tpb_30
+        self.loop_sec6tpb = sec6tpb_30 * self.runtime.speed_factor
 
-        self.runtime.midi_player.play(play_track_data['noteev_list'],sec6tpb_30,play_track_data['ticks_per_beat'],self.start_sec-0.15)
+        self.runtime.midi_player.play(play_track_data['noteev_list'],self.loop_sec6tpb,play_track_data['ticks_per_beat'],self.start_sec-0.15)
 
         super().on_active()
 
