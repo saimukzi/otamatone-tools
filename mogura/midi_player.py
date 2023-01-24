@@ -31,6 +31,7 @@ class MidiPlayer:
         
         self._midiout_open()
         self.midiout.send_message([0xc0, 40])
+        self.midiout.send_message([0xcf, 115])
         
         self.loop_cnt = 0
 
@@ -80,9 +81,11 @@ class MidiPlayer:
             if sec6tpb < noteev['sec6tpb']: break
             #print(noteev)
             if noteev['type'] == 'on':
-                self.midiout.send_message([0x90, noteev['pitch'] , 0x7f])
+                channel = noteev['channel']
+                self.midiout.send_message([0x90+channel, noteev['pitch'] , 0x7f])
             if noteev['type'] == 'off':
-                self.midiout.send_message([0x80, noteev['pitch'] , 0])
+                channel = noteev['channel']
+                self.midiout.send_message([0x80+channel, noteev['pitch'] , 0])
             self.noteev_done += 1
             if self.noteev_done >= len(self.noteev_list):
                 self.noteev_done -= len(self.noteev_list)

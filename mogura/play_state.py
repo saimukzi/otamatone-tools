@@ -161,6 +161,8 @@ class PlayState(note_state.NoteState):
         # for dm in display_track_data1['noteev_list']: dm['src']='2'
         display_track_data = midi_data.merge_track_data([display_track_data,display_track_data0,display_track_data1])
 
+        play_track_data = midi_data.track_data_add_woodblock(play_track_data)
+
         self.track_data = display_track_data
         self.loop_sec6tpb = sec6tpb_30
 

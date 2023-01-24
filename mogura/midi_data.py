@@ -51,7 +51,7 @@ def track_to_noteev_list(track):
                 'tick':tick,
                 'sec6tpb':sec6tpb,
                 'type':'on',
-                'channel':msg.channel,
+                'channel':0,
                 'pitch':msg.note,
                 'tick0':tick,
                 'sec6tpb0':sec6tpb,
@@ -63,7 +63,7 @@ def track_to_noteev_list(track):
                 'tick':tick,
                 'sec6tpb':sec6tpb,
                 'type':'off',
-                'channel':msg.channel,
+                'channel':0,
                 'pitch':msg.note,
             }
             noteev = (tick,0,msg.channel,msg.note,noteev)
@@ -398,5 +398,34 @@ def track_data_change_speed(track_data, speed_factor):
         tempo['tempo']    *= speed_factor
         tempo['sec6tpb0'] *= speed_factor
         tempo['sec6tpb1'] *= speed_factor
+
+    return out_track_data
+
+
+def track_data_add_woodblock(track_data):
+    out_track_data = copy.deepcopy(track_data)
+
+    on_noteev_list = []
+    for i in range(out_track_data['bar_list'][0],out_track_data['bar_list'][-1]+1,out_track_data['ticks_per_beat']):
+        pitch = 84 if i in out_track_data['bar_set'] else 60
+        tick0 = i
+        tick1 = i+out_track_data['ticks_per_beat']//2
+        sec6tpb0 = tick_to_sec6tpb(tick0, out_track_data['tempo_list'])
+        sec6tpb1 = tick_to_sec6tpb(tick1, out_track_data['tempo_list'])
+        on_noteev_list.append({
+            'tick':tick0,
+            'tick0':tick0,
+            'tick1':tick1,
+            'sec6tpb':sec6tpb0,
+            'sec6tpb0':sec6tpb0,
+            'sec6tpb1':sec6tpb1,
+            'type':'on',
+            'pitch':pitch,
+            'channel':15,
+        })
+    off_noteev_list = list(map(_on_noteev_to_off_noteev,on_noteev_list))
+    noteev_list = out_track_data['noteev_list'] + on_noteev_list + off_noteev_list
+    noteev_list = sorted(noteev_list, key=_noteev_sort_key)
+    out_track_data['noteev_list'] = noteev_list
 
     return out_track_data
