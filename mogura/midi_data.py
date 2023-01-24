@@ -282,6 +282,8 @@ def track_data_move_tick(track_data, tick_diff):
     bar_list = list(bar_list)
     out_track_data['bar_list'] = bar_list
 
+    out_track_data['bar_set'] = set(bar_list)
+
     tempo_list = out_track_data['tempo_list']
     for tempo in tempo_list:
         tempo['tick0'] += tick_diff
