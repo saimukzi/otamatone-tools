@@ -27,28 +27,36 @@ class NoteState(null_state.NullState):
             #pygame.draw.rect(screen, matric_note_rail_bg_rect_data['color'], matric_note_rail_bg_rect_data['rect'])
             screen.fill(**matric_note_rail_bg_rect_data)
 
-        # time horizontal line
+        # time horizontal line (thin)
         bar_set = track_data['bar_set']
         y0 = -self.matric_line0_width//2
         y1 = -self.matric_line1_width//2
         w = self.matric_note_rail_x1-self.matric_note_rail_x0
         for tick in range(min_tick//ticks_per_beat*ticks_per_beat,max_tick,ticks_per_beat):
             y = round(self.tick_to_y(tick,vision_offset_y))
-            if tick in bar_set:
-                screen.fill(
-                    rect=(self.matric_note_rail_x0,y+y1,w,self.matric_line1_width),
-                    color=(128,128,128,255),
-                )
-            else:
-                screen.fill(
-                    rect=(self.matric_note_rail_x0,y+y0,w,self.matric_line0_width),
-                    color=(255,255,255,255),
-                )
+            if tick in bar_set: continue
+            screen.fill(
+                rect=(self.matric_note_rail_x0,y+y0,w,self.matric_line0_width),
+                color=(255,255,255,255),
+            )
 
         # note rail pitch line
         for matric_note_rail_pitch_line_data in self.matric_note_rail_pitch_line_data_list:
             screen.fill(**matric_note_rail_pitch_line_data)
 
+        # time horizontal line (thick)
+        bar_set = track_data['bar_set']
+        bar_set = filter(lambda i:i>=min_tick//ticks_per_beat*ticks_per_beat,bar_set)
+        bar_set = filter(lambda i:i< max_tick, bar_set)
+        y0 = -self.matric_line0_width//2
+        y1 = -self.matric_line1_width//2
+        w = self.matric_note_rail_x1-self.matric_note_rail_x0
+        for tick in bar_set:
+            y = round(self.tick_to_y(tick,vision_offset_y))
+            screen.fill(
+                rect=(self.matric_note_rail_x0,y+y1,w,self.matric_line1_width),
+                color=(128,128,128,255),
+            )
 
         # draw note
         noteev_list = track_data['noteev_list']
