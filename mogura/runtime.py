@@ -24,7 +24,7 @@ class Runtime:
         self.ui_zoom_level = 12
         
         self.play_beat_list = [0]*4
-        self.speed_factor = 2 # >1: slower, <1: faster
+        self.time_multiplier = 2 # >1: slower, <1: faster
 
         self.init_filename = kargs['filename']
 

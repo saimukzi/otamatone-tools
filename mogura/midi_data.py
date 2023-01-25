@@ -388,18 +388,18 @@ def merge_track_data(src_track_data_list):
     
     return output_track_data
 
-# speed_factor: >1: slower, <1: faster
-def track_data_change_speed(track_data, speed_factor):
+# time_multiplier: >1: slower, <1: faster
+def track_data_time_multiply(track_data, time_multiplier):
     out_track_data = copy.deepcopy(track_data)
     for noteev in out_track_data['noteev_list']:
-        if 'sec6tpb'  in noteev: noteev['sec6tpb']  *= speed_factor
-        if 'sec6tpb0' in noteev: noteev['sec6tpb0'] *= speed_factor
-        if 'sec6tpb1' in noteev: noteev['sec6tpb1'] *= speed_factor
+        if 'sec6tpb'  in noteev: noteev['sec6tpb']  *= time_multiplier
+        if 'sec6tpb0' in noteev: noteev['sec6tpb0'] *= time_multiplier
+        if 'sec6tpb1' in noteev: noteev['sec6tpb1'] *= time_multiplier
 
     for tempo in out_track_data['tempo_list']:
-        tempo['tempo']    *= speed_factor
-        tempo['sec6tpb0'] *= speed_factor
-        tempo['sec6tpb1'] *= speed_factor
+        tempo['tempo']    *= time_multiplier
+        tempo['sec6tpb0'] *= time_multiplier
+        tempo['sec6tpb1'] *= time_multiplier
 
     return out_track_data
 
