@@ -27,6 +27,26 @@ class NoteState(null_state.NullState):
             #pygame.draw.rect(screen, matric_note_rail_bg_rect_data['color'], matric_note_rail_bg_rect_data['rect'])
             screen.fill(**matric_note_rail_bg_rect_data)
 
+        # draw note length
+        noteev_list = track_data['noteev_list']
+        noteev_list = filter(lambda i:i['type']=='on',noteev_list)
+        noteev_list = filter(lambda i:i['tick1']>min_tick,noteev_list)
+        noteev_list = filter(lambda i:i['tick0']<max_tick,noteev_list)
+        noteev_list = list(noteev_list)
+        c = 0xdd
+        for noteev in noteev_list:
+            pitch = noteev['pitch']
+            x = self.pitch_to_x(noteev['pitch'])
+            x0 = x-self.matric_cell_width//4
+            x1 = x+self.matric_cell_width//4
+            y0 = round(noteev['y0']-vision_offset_y+self.matric_y0)
+            y0 = max(y0,0)
+            y1 = round(noteev['y1']-vision_offset_y+self.matric_y0)
+            screen.fill(
+                rect=(x0,y0,x1-x0,y1-y0),
+                color=(c,c,c,255),
+            )
+
         # time horizontal line (thin)
         bar_set = track_data['bar_set']
         y0 = -self.matric_line0_width//2
@@ -58,7 +78,7 @@ class NoteState(null_state.NullState):
                 color=(128,128,128,255),
             )
 
-        # draw note
+        # draw note signal
         noteev_list = track_data['noteev_list']
         noteev_list = filter(lambda i:i['type']=='on',noteev_list)
         noteev_list = filter(lambda i:i['tick1']>min_tick,noteev_list)
