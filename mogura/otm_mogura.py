@@ -1,8 +1,13 @@
+import argparse
 import runtime
 
 
 def main():
-    runtime.run()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('filename', nargs='?')
+    args = parser.parse_args()
+
+    runtime.run(**vars(args))
 
 
 if __name__=="__main__":

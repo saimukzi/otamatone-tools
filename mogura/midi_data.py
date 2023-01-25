@@ -362,7 +362,7 @@ def merge_track_data(src_track_data_list):
     #    assert(tempo0['tick1']==tempo1['tick0'])
     #    assert(tempo0['sec6tpb1']==tempo1['sec6tpb0'])
     #output_track_data['tempo_list'] = tempo_list
-    print(f'AVYZPMFEOG src_tempo_list={src_tempo_list}')
+    # print(f'AVYZPMFEOG src_tempo_list={src_tempo_list}')
     out_tempo_list = []
     out_tempo_list.append(src_tempo_list[0])
     for src_tempo in src_tempo_list[1:]:

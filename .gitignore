@@ -2,6 +2,7 @@
 /.settings
 *.old
 .python-version
+*.log
 
 venv
 *.mid
