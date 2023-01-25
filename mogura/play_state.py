@@ -160,11 +160,12 @@ class PlayState(note_state.NoteState):
 
         play_track_data = midi_data.track_data_add_woodblock(play_track_data)
         
-        play_track_data = midi_data.track_data_time_multiply(play_track_data, self.runtime.time_multiplier)
-        display_track_data = midi_data.track_data_time_multiply(display_track_data, self.runtime.time_multiplier)
+        time_multiplier = self.runtime.time_multiplier()
+        play_track_data = midi_data.track_data_time_multiply(play_track_data, time_multiplier)
+        display_track_data = midi_data.track_data_time_multiply(display_track_data, time_multiplier)
 
         self.track_data = display_track_data
-        self.loop_sec6tpb = sec6tpb_30 * self.runtime.time_multiplier
+        self.loop_sec6tpb = sec6tpb_30 * time_multiplier
 
         self.runtime.midi_player.play(play_track_data['noteev_list'],self.loop_sec6tpb,play_track_data['ticks_per_beat'],self.start_sec-0.15)
 

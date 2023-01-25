@@ -24,9 +24,11 @@ class Runtime:
         self.ui_zoom_level = 12
         
         self.play_beat_list = [0]*4
-        self.time_multiplier = 2 # >1: slower, <1: faster
+        # self.time_multiplier = 2 # >1: slower, <1: faster
 
-        self.init_filename = kargs['filename']
+        self.init_kargs = kargs
+        
+        self.speed_level = self.init_kargs['speed']
 
     def run(self):
         pygame.init()
@@ -45,8 +47,8 @@ class Runtime:
         self.state_pool.add_state(play_state.PlayState(self))
         self.state_pool.set_active('NULL')
 
-        if self.init_filename is not None:
-            self.open_file(self.init_filename)
+        if 'filename' in self.init_kargs:
+            self.open_file(self.init_kargs['filename'])
 
         self.timer_pool.run()
 
@@ -85,6 +87,9 @@ class Runtime:
         self.play_beat_list[3] = self.play_beat_list[2]
         self.state_pool.set_active('EDIT')
         self.state_pool.on_midi_update()
+
+    def time_multiplier(self):
+        return 2**(-self.speed_level/12)
 
 instance = None
 
