@@ -480,7 +480,6 @@ def track_data_add_woodblock(track_data, start_tick, end_tick):
     #print(start_tick,end_tick)
     for i in beat_itr:
         if i >= end_tick: break
-        # print(f'i={i}')
         pitch = 84 if i == bar else 60
         tick0 = i
         tick1 = i+tpb//2
