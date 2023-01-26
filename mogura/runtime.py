@@ -83,7 +83,7 @@ class Runtime:
         self.midi_data = midi_data.path_to_data(file_path)
         self.play_beat_list[0] = 0
         self.play_beat_list[1] = 0
-        self.play_beat_list[2] = self.midi_data['track_list'][0]['bar_list'][-1] // self.midi_data['ticks_per_beat']
+        self.play_beat_list[2] = midi_data.last_bar_tick(self.midi_data['track_list'][0])
         self.play_beat_list[3] = self.play_beat_list[2]
         self.state_pool.set_active('EDIT')
         self.state_pool.on_midi_update()

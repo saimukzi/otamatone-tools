@@ -1,6 +1,7 @@
 import common
 import copy
 import math
+import midi_data
 import pygame
 import null_state
 from PIL import Image, ImageDraw
@@ -65,13 +66,14 @@ class NoteState(null_state.NullState):
             )
 
         # time horizontal line (thin)
-        bar_set = track_data['bar_set']
+        #bar_set = track_data['bar_set']
         y0 = -self.matric_line0_width//2
         y1 = -self.matric_line1_width//2
         w = self.matric_note_rail_x1-self.matric_note_rail_x0
-        for tick in range(min_tick//ticks_per_beat*ticks_per_beat,max_tick,ticks_per_beat):
+        for tick in midi_data.get_beat_itr(min_tick, ticks_per_beat):
+            if tick > max_tick: break
+            #print(f'beat tick={tick}')
             y = round(self.tick_to_y(tick,vision_offset_y))
-            if tick in bar_set: continue
             screen.fill(
                 rect=(self.matric_note_rail_x0,y+y0,w,self.matric_line0_width),
                 color=(255,255,255,255),
@@ -82,13 +84,16 @@ class NoteState(null_state.NullState):
             screen.fill(**matric_note_rail_pitch_line_data)
 
         # time horizontal line (thick)
-        bar_set = track_data['bar_set']
-        bar_set = filter(lambda i:i>=min_tick//ticks_per_beat*ticks_per_beat,bar_set)
-        bar_set = filter(lambda i:i< max_tick, bar_set)
+#        bar_set = track_data['bar_set']
+#        bar_set = filter(lambda i:i>=min_tick//ticks_per_beat*ticks_per_beat,bar_set)
+#        bar_set = filter(lambda i:i< max_tick, bar_set)
         y0 = -self.matric_line0_width//2
         y1 = -self.matric_line1_width//2
         w = self.matric_note_rail_x1-self.matric_note_rail_x0
-        for tick in bar_set:
+        #print(f'bar min_tick={min_tick}')
+        for tick in midi_data.get_bar_itr(min_tick, track_data):
+            if tick >= max_tick: break
+            #print(f'bar min_tick={min_tick} tick={tick}')
             y = round(self.tick_to_y(tick,vision_offset_y))
             screen.fill(
                 rect=(self.matric_note_rail_x0,y+y1,w,self.matric_line1_width),

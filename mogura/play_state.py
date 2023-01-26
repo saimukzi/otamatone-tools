@@ -136,6 +136,7 @@ class PlayState(note_state.NoteState):
 #        play_noteev_list = play_noteev_list + play_noteev_off_list
 #        play_noteev_list = sorted(play_noteev_list, key=lambda i:i['sort_key'])
 
+        #print(self.runtime.play_beat_list)
         play_track_data = copy.deepcopy(self.runtime.midi_data['track_list'][0])
         play_tick_list    = list(map(lambda i:i*play_track_data['ticks_per_beat'],self.runtime.play_beat_list))
         play_sec6tpb_list = list(map(lambda i:midi_data.tick_to_sec6tpb(i,play_track_data['tempo_list']),play_tick_list))
@@ -158,7 +159,7 @@ class PlayState(note_state.NoteState):
         # for dm in display_track_data1['noteev_list']: dm['src']='2'
         display_track_data = midi_data.merge_track_data([display_track_data,display_track_data0,display_track_data1])
 
-        play_track_data = midi_data.track_data_add_woodblock(play_track_data)
+        play_track_data = midi_data.track_data_add_woodblock(play_track_data, 0, tick_30+1)
         
         time_multiplier = self.runtime.time_multiplier()
         play_track_data = midi_data.track_data_time_multiply(play_track_data, time_multiplier)

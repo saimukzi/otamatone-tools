@@ -1,7 +1,11 @@
 import copy
 import itertools
 #import json
+import math
 import mido
+
+
+INF = float('inf')
 
 
 def path_to_data(file_path):
@@ -21,8 +25,9 @@ def track_to_data(track,ticks_per_beat):
     track_data['name'] = track.name
     track_data['noteev_list'] = track_to_noteev_list(track)
     end_tick = track_data['noteev_list'][-1]['tick']
-    track_data['bar_list']   = track_to_bar_list(track,end_tick,ticks_per_beat)
-    track_data['bar_set']    = set(track_data['bar_list'])
+#    track_data['bar_list']   = track_to_bar_list(track,end_tick,ticks_per_beat)
+#    track_data['bar_set']    = set(track_data['bar_list'])
+    track_data['time_signature_list'] = track_to_time_signature_list(track)
     track_data['tempo_list'] = track_to_tempo_list(track,end_tick,ticks_per_beat)
 
     max_pitch = track_data['noteev_list']
@@ -90,12 +95,46 @@ def track_to_noteev_list(track):
     return ret_noteev_list
 
 
-def track_to_bar_list(track,end_tick,ticks_per_beat):
+#def track_to_bar_list(track,end_tick,ticks_per_beat):
+#    time_signature_list = []
+#    time_signature_list.append({
+#        'numerator': 4,
+#        'denominator': 4,
+#        'tick0': 0,
+#    })
+#    tick = 0
+#    for msg in track:
+#        tick += msg.time
+#        if msg.type != 'time_signature': continue
+#        time_signature_list[-1]['tick1'] = tick
+#        time_signature_list.append({
+#            'numerator': msg.numerator,
+#            'denominator': msg.denominator,
+#            'tick0': tick,
+#        })
+#
+#    time_signature_list[-1]['tick1'] = end_tick
+#
+#    ret_bar_list = []
+#    for time_signature in time_signature_list:
+#        tick = time_signature['tick0']
+#        dtick = ticks_per_beat * time_signature['numerator'] * 4 // time_signature['denominator']
+#        while tick < time_signature['tick1']:
+#            ret_bar_list.append(tick)
+#            tick += dtick
+#    ret_bar_list.append(tick)
+#    ret_bar_list.sort()
+#    
+#    return ret_bar_list
+
+
+def track_to_time_signature_list(track):
     time_signature_list = []
     time_signature_list.append({
         'numerator': 4,
         'denominator': 4,
         'tick0': 0,
+        'tick1': INF,
     })
     tick = 0
     for msg in track:
@@ -106,21 +145,13 @@ def track_to_bar_list(track,end_tick,ticks_per_beat):
             'numerator': msg.numerator,
             'denominator': msg.denominator,
             'tick0': tick,
+            'tick1': INF,
         })
 
-    time_signature_list[-1]['tick1'] = end_tick
+    time_signature_list = list(filter(lambda i:i['tick0']<i['tick1'], time_signature_list))
 
-    ret_bar_list = []
-    for time_signature in time_signature_list:
-        tick = time_signature['tick0']
-        dtick = ticks_per_beat * time_signature['numerator'] * 4 // time_signature['denominator']
-        while tick < time_signature['tick1']:
-            ret_bar_list.append(tick)
-            tick += dtick
-    ret_bar_list.append(tick)
-    ret_bar_list.sort()
-    
-    return ret_bar_list
+    return time_signature_list
+
 
 def track_to_tempo_list(track,end_tick,ticks_per_beat):
     ret_tempo_list = []
@@ -212,13 +243,18 @@ def track_data_chop_tick(track_data, start_bar_tick, start_note_tick, end_note_t
 
     out_track_data['noteev_list'] = noteev_list
 
-    bar_list = out_track_data['bar_list']
-    bar_list = filter(lambda i:i>=start_bar_tick ,bar_list)
-    bar_list = filter(lambda i:i<=end_bar_tick ,bar_list)
-    bar_list = list(bar_list)
-    out_track_data['bar_list'] = bar_list
+#    bar_list = out_track_data['bar_list']
+#    bar_list = filter(lambda i:i>=start_bar_tick ,bar_list)
+#    bar_list = filter(lambda i:i<=end_bar_tick ,bar_list)
+#    bar_list = list(bar_list)
+#    out_track_data['bar_list'] = bar_list
+#    out_track_data['bar_set'] = set(bar_list)
 
-    out_track_data['bar_set'] = set(bar_list)
+    time_signature_list = out_track_data['time_signature_list']
+    time_signature_list = filter(lambda i:i['tick1']>start_bar_tick, time_signature_list)
+    time_signature_list = filter(lambda i:i['tick0']<end_bar_tick,   time_signature_list)
+    time_signature_list = list(time_signature_list)
+    time_signature_list[-1]['tick1'] = INF
 
     tempo_list = out_track_data['tempo_list']
     tempo_list = filter(lambda i:i['tick1']> start_bar_tick,tempo_list)
@@ -269,6 +305,14 @@ def _tempo_sort_key(tempo):
         tempo['tempo'],
     )
 
+def _time_signature_sort_key(ts):
+    return (
+        ts['tick0'],
+        ts['tick1'],
+        ts['numerator'],
+        ts['denominator'],
+    )
+
 def track_data_move_tick(track_data, tick_diff):
     out_track_data = copy.deepcopy(track_data)
     noteev_list = out_track_data['noteev_list']
@@ -277,17 +321,22 @@ def track_data_move_tick(track_data, tick_diff):
         if 'tick0' in noteev: noteev['tick0']+=tick_diff
         if 'tick1' in noteev: noteev['tick1']+=tick_diff
 
-    bar_list = out_track_data['bar_list']
-    bar_list = map(lambda i:i+tick_diff, bar_list)
-    bar_list = list(bar_list)
-    out_track_data['bar_list'] = bar_list
+#    bar_list = out_track_data['bar_list']
+#    bar_list = map(lambda i:i+tick_diff, bar_list)
+#    bar_list = list(bar_list)
+#    out_track_data['bar_list'] = bar_list
+#    out_track_data['bar_set'] = set(bar_list)
 
-    out_track_data['bar_set'] = set(bar_list)
+    time_signature_list = out_track_data['time_signature_list']
+    for time_signature in time_signature_list:
+        time_signature['tick0'] += tick_diff
+        time_signature['tick1'] += tick_diff
 
     tempo_list = out_track_data['tempo_list']
     for tempo in tempo_list:
         tempo['tick0'] += tick_diff
         tempo['tick1'] += tick_diff
+
     return out_track_data
 
 def track_data_move_sec6tpb(track_data, sec6tpb_diff):
@@ -328,6 +377,11 @@ def track_data_move_sec6tpb(track_data, sec6tpb_diff):
 def merge_track_data(src_track_data_list):
     output_track_data = {}
     output_track_data['name'] = src_track_data_list[0]['name']
+    
+    tpb = set(map(lambda i:i['ticks_per_beat'],src_track_data_list))
+    assert(len(tpb)==1)
+    tpb = list(tpb)[0]
+    output_track_data['ticks_per_beat'] = tpb
 
     noteev_list = itertools.chain(*list(map(lambda i:i['noteev_list'],src_track_data_list)))
     noteev_list = sorted(noteev_list, key=_noteev_sort_key)
@@ -347,11 +401,18 @@ def merge_track_data(src_track_data_list):
             assert(False)
     output_track_data['noteev_list'] = noteev_list
 
-    bar_list = itertools.chain(*list(map(lambda i:i['bar_list'],src_track_data_list)))
-    bar_list = sorted(list(set(bar_list)))
-    output_track_data['bar_list'] = bar_list
-
-    output_track_data['bar_set'] = set(output_track_data['bar_list'])
+    # bar_list = itertools.chain(*list(map(lambda i:i['bar_list'],src_track_data_list)))
+    # bar_list = sorted(list(set(bar_list)))
+    # output_track_data['bar_list'] = bar_list
+    # output_track_data['bar_set'] = set(output_track_data['bar_list'])
+    time_signature_list = itertools.chain(*list(map(lambda i:i['time_signature_list'],src_track_data_list)))
+    time_signature_list = sorted(time_signature_list, key=_time_signature_sort_key)
+    for i in range(len(time_signature_list)-1):
+        time_signature0 = time_signature_list[i]
+        time_signature1 = time_signature_list[i+1]
+        assert( (time_signature0['tick1'] == INF) or (time_signature0['tick1'] <= time_signature1['tick0']) )
+        time_signature0['tick1'] = time_signature1['tick0']
+    output_track_data['time_signature_list']= time_signature_list
 
     src_tempo_list = itertools.chain(*list(map(lambda i:i['tempo_list'],src_track_data_list)))
     src_tempo_list = sorted(src_tempo_list, key=_tempo_sort_key)
@@ -404,14 +465,25 @@ def track_data_time_multiply(track_data, time_multiplier):
     return out_track_data
 
 
-def track_data_add_woodblock(track_data):
+def track_data_add_woodblock(track_data, start_tick, end_tick):
     out_track_data = copy.deepcopy(track_data)
 
+    tpb = out_track_data['ticks_per_beat']
+    # time_signature_list = out_track_data['time_signature_list']
+    beat_itr = get_beat_itr(start_tick, tpb)
+    bar_itr = get_bar_itr(start_tick, out_track_data)
+    bar = next(bar_itr)
+
     on_noteev_list = []
-    for i in range(out_track_data['bar_list'][0],out_track_data['bar_list'][-1]+1,out_track_data['ticks_per_beat']):
-        pitch = 84 if i in out_track_data['bar_set'] else 60
+#    for i in range(out_track_data['bar_list'][0],out_track_data['bar_list'][-1]+1,out_track_data['ticks_per_beat']):
+    start_tick = math.ceil(start_tick/tpb)*tpb
+    #print(start_tick,end_tick)
+    for i in beat_itr:
+        if i >= end_tick: break
+        # print(f'i={i}')
+        pitch = 84 if i == bar else 60
         tick0 = i
-        tick1 = i+out_track_data['ticks_per_beat']//2
+        tick1 = i+tpb//2
         sec6tpb0 = tick_to_sec6tpb(tick0, out_track_data['tempo_list'])
         sec6tpb1 = tick_to_sec6tpb(tick1, out_track_data['tempo_list'])
         on_noteev_list.append({
@@ -425,9 +497,58 @@ def track_data_add_woodblock(track_data):
             'pitch':pitch,
             'channel':15,
         })
+        if i >= bar: bar=next(bar_itr)
+    
     off_noteev_list = list(map(_on_noteev_to_off_noteev,on_noteev_list))
     noteev_list = out_track_data['noteev_list'] + on_noteev_list + off_noteev_list
     noteev_list = sorted(noteev_list, key=_noteev_sort_key)
     out_track_data['noteev_list'] = noteev_list
 
     return out_track_data
+
+def is_bar(tick, track_data):
+    tpb = track_data['ticks_per_beat']
+    ts = track_data['time_signature_list']
+    ts = list(filter(lambda i:i['tick1']>tick, ts))[0]
+    return ((tick-ts['tick0'])*ts['denominator']/tpb/4)%ts['numerator'] == 0
+
+def last_bar_tick(track_data):
+    tpb  = track_data['ticks_per_beat']
+    tick = track_data['noteev_list']
+    tick = list(filter(lambda i:i['type']=='on',tick))[-1]['tick1']
+    ts = track_data['time_signature_list'][-1]
+    assert(tick>=ts['tick0'])
+    tick -= ts['tick0']
+    tick = math.ceil(tick*ts['denominator']/4/ts['numerator']/tpb)
+    tick = tick*tpb*4*ts['numerator']/ts['denominator']
+    assert(tick==math.floor(tick))
+    tick = math.floor(tick)
+    tick += ts['tick0']
+    return tick
+
+def get_bar_itr(tick0, track_data):
+    tpb = track_data['ticks_per_beat']
+    time_signature_list = track_data['time_signature_list']
+    time_signature_list = list(filter(lambda i:i['tick1']>tick0,time_signature_list))
+    ts = time_signature_list[0]
+    tick = tick0
+    tick -= ts['tick0']
+    tick = math.ceil(tick*ts['denominator']/4/ts['numerator']/tpb)
+    tick = tick*tpb*4*ts['numerator']//ts['denominator']
+    assert(tick==math.floor(tick))
+    tick += ts['tick0']
+    tsi = 0
+    while True:
+        yield(tick)
+        ts = time_signature_list[tsi]
+        tick += ts['numerator']*4*tpb//ts['denominator']
+        if tick >= ts['tick1']:
+            tsi += 1
+            tick = time_signature_list[tsi]['tick0']
+
+def get_beat_itr(tick0, tpb):
+    tick = tick0
+    tick = math.ceil(tick/tpb) * tpb
+    while True:
+        yield(tick)
+        tick += tpb
