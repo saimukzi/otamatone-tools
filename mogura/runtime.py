@@ -47,7 +47,7 @@ class Runtime:
         self.state_pool.add_state(play_state.PlayState(self))
         self.state_pool.set_active('NULL')
 
-        if 'filename' in self.init_kargs:
+        if self.init_kargs['filename'] is not None:
             self.open_file(self.init_kargs['filename'])
 
         self.timer_pool.run()
