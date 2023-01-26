@@ -33,18 +33,35 @@ class NoteState(null_state.NullState):
         noteev_list = filter(lambda i:i['tick1']>min_tick,noteev_list)
         noteev_list = filter(lambda i:i['tick0']<max_tick,noteev_list)
         noteev_list = list(noteev_list)
-        c = 0xdd
+        c,e = 0xcc, 0xdd
+        d = (c+e)//2
+        CC = [
+            (e,c,c,e),
+            (e,d,c,e),
+            (e,e,c,e),
+            (d,e,c,e),
+            (c,e,c,e),
+            (c,e,d,e),
+            (c,e,e,e),
+            (c,d,e,e),
+            (c,c,e,e),
+            (d,c,e,e),
+            (e,c,e,e),
+            (e,c,d,e),
+        ]
         for noteev in noteev_list:
             pitch = noteev['pitch']
             x = self.pitch_to_x(noteev['pitch'])
-            x0 = x-self.matric_cell_width//4
-            x1 = x+self.matric_cell_width//4
+            x0 = x-self.matric_cell_width//8
+            x1 = x+self.matric_cell_width//8
             y0 = round(noteev['y0']-vision_offset_y+self.matric_y0)
             y0 = max(y0,0)
             y1 = round(noteev['y1']-vision_offset_y+self.matric_y0)
+            cc = (pitch+4+300-PITCH_A4)%12
+            cc = CC[cc]
             screen.fill(
                 rect=(x0,y0,x1-x0,y1-y0),
-                color=(c,c,c,255),
+                color=cc,
             )
 
         # time horizontal line (thin)
