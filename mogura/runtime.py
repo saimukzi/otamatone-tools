@@ -58,7 +58,7 @@ class Runtime:
         if self.screen_size != screen_size:
             self.state_pool.on_screen_change(screen_size)
             self.screen_size = screen_size
-        self.state_pool.screen_tick(self.screen, sec)
+        self.state_pool.screen_tick(screen=self.screen, sec=sec)
         pygame.display.flip()
 
 

@@ -16,8 +16,8 @@ class EditState(note_state.NoteState):
         
         self.vision_offset_y = 0
 
-    def screen_tick(self, screen, sec):
-        super().screen_tick(screen, sec)
+    def screen_tick(self, screen, sec, **kwargs):
+        super().screen_tick(screen=screen, sec=sec, **kwargs)
 
         self.draw_note_rail(screen, self.vision_offset_y)
 
