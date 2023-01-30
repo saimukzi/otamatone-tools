@@ -15,6 +15,7 @@ class EditState(note_state.NoteState):
         self.lctrl_down = False
         
         self.vision_offset_y = 0
+        self.gui = None
 
     def screen_tick(self, screen, text_draw, sec, **kwargs):
         super().screen_tick(screen=screen, sec=sec, text_draw=text_draw, **kwargs)

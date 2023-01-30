@@ -1,3 +1,4 @@
+import common
 import pygame
 
 TEXT_LIFE_TICK = 300
@@ -26,19 +27,9 @@ class TextDraw:
             del self.tsc_to_surface_data_dict[k]
 
     def draw(self, surface, text, size, color, xy, anchor):
-        x,y = xy
         text_surface = self._get_surface(text, size, color)
-        width,height = text_surface.get_size()
-        dx = anchor % 3
-        dx = (-width)    if dx==0 else \
-             (-width//2) if dx==2 else \
-             0
-        dy = (anchor-1)//3
-        dy = (-height)    if dy==0 else \
-             (-height//2) if dy==1 else \
-             0
-        xy2 = (x+dx,y+dy)
-        surface.blit(text_surface,(x+dx,y+dy))
+        xy = common.anchor(xy, text_surface.get_size(), anchor)
+        surface.blit(text_surface,xy)
     
     def _get_surface(self, text, size, color):
         tsc = (text, size, color)
