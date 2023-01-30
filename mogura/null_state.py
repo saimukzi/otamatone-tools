@@ -6,7 +6,7 @@ class NullState:
         self.id = 'NULL'
         self.runtime = runtime
 
-    def screen_tick(self, screen, sec):
+    def screen_tick(self, screen, **kwargs):
         screen.fill((255,255,255))
 
     def event_tick(self, event, sec):

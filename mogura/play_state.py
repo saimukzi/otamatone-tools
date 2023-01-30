@@ -16,8 +16,8 @@ class PlayState(note_state.NoteState):
         #self.track_list = None
         self.loop_sec6tpb = None
 
-    def screen_tick(self, screen, sec):
-        super().screen_tick(screen, sec)
+    def screen_tick(self, screen, sec, **kwargs):
+        super().screen_tick(screen=screen, sec=sec, **kwargs)
 
         vision_offset_y = time.time()
         vision_offset_y -= self.start_sec

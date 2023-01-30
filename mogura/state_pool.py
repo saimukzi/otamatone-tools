@@ -13,9 +13,9 @@ class StatePool:
         self.active_id = id
         self.new_state = self.id_to_state_dict.get(self.active_id, None)
 
-    def screen_tick(self, screen, sec):
+    def screen_tick(self, **kwargs):
         if self.active_state is None: return
-        self.active_state.screen_tick(screen, sec)
+        self.active_state.screen_tick(**kwargs)
 
     def event_tick(self, event, sec):
         if self.active_state != self.new_state:
