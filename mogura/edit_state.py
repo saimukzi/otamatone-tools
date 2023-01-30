@@ -16,8 +16,8 @@ class EditState(note_state.NoteState):
         
         self.vision_offset_y = 0
 
-    def screen_tick(self, screen, sec, **kwargs):
-        super().screen_tick(screen=screen, sec=sec, **kwargs)
+    def screen_tick(self, screen, text_draw, sec, **kwargs):
+        super().screen_tick(screen=screen, sec=sec, text_draw=text_draw, **kwargs)
 
         self.draw_note_rail(screen, self.vision_offset_y)
 
@@ -54,6 +54,8 @@ class EditState(note_state.NoteState):
             rect=(x1,play_y0_list[2]+y0,x2-x1,self.matric_line1_width),
             color=(c11,c10,c10),
         )
+        
+        text_draw.draw(screen, f'speed={self.runtime.speed_level}', 40, (127,127,127), (matric_screen_size[0]-10,matric_screen_size[1]-10), 3)
 
 
     def event_tick(self, event, sec):

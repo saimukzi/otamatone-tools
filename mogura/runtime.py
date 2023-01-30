@@ -7,6 +7,7 @@ import null_state
 import play_state
 import pygame
 import state_pool
+import text_draw
 import time
 import timer_pool
 
@@ -50,6 +51,8 @@ class Runtime:
         if self.init_kargs['filename'] is not None:
             self.open_file(self.init_kargs['filename'])
 
+        self.text_draw = text_draw.TextDraw()
+
         self.timer_pool.run()
 
     def screen_tick(self, sec):
@@ -58,7 +61,8 @@ class Runtime:
         if self.screen_size != screen_size:
             self.state_pool.on_screen_change(screen_size)
             self.screen_size = screen_size
-        self.state_pool.screen_tick(screen=self.screen, sec=sec)
+        self.text_draw.on_tick_start()
+        self.state_pool.screen_tick(screen=self.screen, text_draw=self.text_draw, sec=sec)
         pygame.display.flip()
 
 
