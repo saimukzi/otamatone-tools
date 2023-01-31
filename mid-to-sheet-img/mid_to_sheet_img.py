@@ -22,6 +22,10 @@ BUFFER_Y_OFFSET = PX_UNIT * 2
 PX_UNIT_PHII = math.ceil(PX_UNIT/PHI)
 PX_UNIT_PHII2 = math.ceil(PX_UNIT/PHI/2)
 
+VLINE_SIZE_LIST = [4,1]
+HLINE_SIZE = [4,1]
+NOTE_LINE_SIZE = 4+1
+
 parser = argparse.ArgumentParser()
 parser.add_argument('input_mid_path')
 parser.add_argument('output_img_path')
@@ -185,7 +189,7 @@ for pitch in range(buffer_sheet_r_pitch, buffer_sheet_l_pitch+1):
     if p % LINE_PITCH_CNT != 0: continue
     x = (buffer_sheet_l_pitch-pitch) * PX_UNIT / LINE_PITCH_CNT
     y0,y1 = 0,img_h
-    w = 4 if p % LINE_PITCH_CNT3 == 0 else 1
+    w = VLINE_SIZE_LIST[0] if p % LINE_PITCH_CNT3 == 0 else VLINE_SIZE_LIST[1]
     c = C0 if p % LINE_PITCH_CNT3 == 0 else C1
     print((x,y0,x,y1))
     draw.line((x,y0,x,y1),fill=(c,c,c,255),width=w)
@@ -197,9 +201,10 @@ for time_signature in time_signature_list:
     dt = ticks_per_beat*time_signature['numerator']*4//time_signature['denominator']
     for t in range(time_signature['start'],time_signature['end']+1,dt):
         y = (t-time_min) * PX_UNIT // ticks_per_beat + BUFFER_Y_OFFSET
-        draw.line((x0,y,x1,y),fill=(C,C,C,255),width=w)
+        draw.line((x0,y,x1,y),fill=(C,C,C,255),width=HLINE_SIZE[0])
 
 # draw note
+C = (0,0,0,255)
 for note in note_list:
     pitch = note['pitch']
     start = note['start']
@@ -207,26 +212,44 @@ for note in note_list:
     if p4 == 0:
         x = (buffer_sheet_l_pitch-pitch) * PX_UNIT / LINE_PITCH_CNT
         y = (start-time_min) * PX_UNIT // ticks_per_beat + BUFFER_Y_OFFSET
-        draw.line((x-PX_UNIT_PHII2,y-PX_UNIT_PHII2,x+PX_UNIT_PHII2,y+PX_UNIT_PHII2),fill=(0,0,0,255),width=4)
-        draw.line((x-PX_UNIT_PHII2,y+PX_UNIT_PHII2,x+PX_UNIT_PHII2,y-PX_UNIT_PHII2),fill=(0,0,0,255),width=4)
+        p0 = x-PX_UNIT_PHII2,y-PX_UNIT_PHII2
+        p1 = x+PX_UNIT_PHII2,y+PX_UNIT_PHII2
+        p2 = x-PX_UNIT_PHII2,y+PX_UNIT_PHII2
+        p3 = x+PX_UNIT_PHII2,y-PX_UNIT_PHII2
+#        draw.line((x-PX_UNIT_PHII2,y-PX_UNIT_PHII2,x+PX_UNIT_PHII2,y+PX_UNIT_PHII2),fill=(0,0,0,255),width=NOTE_LINE_SIZE)
+        # width+1 to draw fine, reason unknown
+        draw.line(p0+p1,fill=(0,0,0,255),width=NOTE_LINE_SIZE+1)
+        draw.line(p2+p3,fill=(0,0,0,255),width=NOTE_LINE_SIZE+1)
+        l = NOTE_LINE_SIZE//2
+        draw.ellipse((p0[0]-l,p0[1]-l,p0[0]+l,p0[1]+l),fill=C)
+        draw.ellipse((p1[0]-l,p1[1]-l,p1[0]+l,p1[1]+l),fill=C)
+        draw.ellipse((p2[0]-l,p2[1]-l,p2[0]+l,p2[1]+l),fill=C)
+        draw.ellipse((p3[0]-l,p3[1]-l,p3[0]+l,p3[1]+l),fill=C)
     elif p4 == 1:
         x = (buffer_sheet_l_pitch-pitch+1) * PX_UNIT / LINE_PITCH_CNT
         y = (start-time_min) * PX_UNIT // ticks_per_beat + BUFFER_Y_OFFSET
         p0 = (x,y)
         p1 = (x-PX_UNIT_PHII2*2,y-PX_UNIT_PHII2)
         p2 = (x-PX_UNIT_PHII2*2,y+PX_UNIT_PHII2)
-        draw.line((p0,p1,p2,p0),fill=(0,0,0,255),width=4)
+        draw.line((p0,p1,p2,p0),fill=(0,0,0,255),width=NOTE_LINE_SIZE)
+        draw.ellipse((p0[0]-l,p0[1]-l,p0[0]+l,p0[1]+l),fill=C)
+        draw.ellipse((p1[0]-l,p1[1]-l,p1[0]+l,p1[1]+l),fill=C)
+        draw.ellipse((p2[0]-l,p2[1]-l,p2[0]+l,p2[1]+l),fill=C)
     elif p4 == 2:
         x = (buffer_sheet_l_pitch-pitch) * PX_UNIT / LINE_PITCH_CNT
         y = (start-time_min) * PX_UNIT // ticks_per_beat + BUFFER_Y_OFFSET
-        draw.ellipse((x-PX_UNIT_PHII2,y-PX_UNIT_PHII2,x+PX_UNIT_PHII2,y+PX_UNIT_PHII2),outline=(0,0,0,255),width=4)
+        draw.ellipse((x-PX_UNIT_PHII2,y-PX_UNIT_PHII2,x+PX_UNIT_PHII2,y+PX_UNIT_PHII2),outline=(0,0,0,255),width=NOTE_LINE_SIZE)
     elif p4 == 3:
         x = (buffer_sheet_l_pitch-pitch-1) * PX_UNIT / LINE_PITCH_CNT
         y = (start-time_min) * PX_UNIT // ticks_per_beat + BUFFER_Y_OFFSET
         p0 = (x,y)
         p1 = (x+PX_UNIT_PHII2*2,y-PX_UNIT_PHII2)
         p2 = (x+PX_UNIT_PHII2*2,y+PX_UNIT_PHII2)
-        draw.line((p0,p1,p2,p0),fill=(0,0,0,255),width=4)
+        draw.line((p0,p1,p2,p0),fill=(0,0,0,255),width=NOTE_LINE_SIZE)
+        l = NOTE_LINE_SIZE//2
+        draw.ellipse((p0[0]-l,p0[1]-l,p0[0]+l,p0[1]+l),fill=C)
+        draw.ellipse((p1[0]-l,p1[1]-l,p1[0]+l,p1[1]+l),fill=C)
+        draw.ellipse((p2[0]-l,p2[1]-l,p2[0]+l,p2[1]+l),fill=C)
 
 img.save(f'{args.output_img_path}-debug.png')
 
