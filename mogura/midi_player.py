@@ -2,6 +2,9 @@ import copy
 import time
 import rtmidi
 
+VOLUME_MIN = 0
+VOLUME_MAX = 0x7f
+
 class MidiPlayer:
 
     def _set_none(self):
@@ -20,6 +23,8 @@ class MidiPlayer:
     
     def __init__(self):
         self._set_none()
+        
+        self.channel_to_volume_dict = {0:0x7f, 15:0x7f}
 
 
     def play(self,noteev_list,loop_sec6tpb,ticks_per_beat,start_sec):
@@ -82,7 +87,8 @@ class MidiPlayer:
             #print(noteev)
             if noteev['type'] == 'on':
                 channel = noteev['channel']
-                self.midiout.send_message([0x90+channel, noteev['pitch'] , 0x7f])
+                volume = self.channel_to_volume_dict[channel]
+                self.midiout.send_message([0x90+channel, noteev['pitch'] , volume])
             if noteev['type'] == 'off':
                 channel = noteev['channel']
                 self.midiout.send_message([0x80+channel, noteev['pitch'] , 0])
