@@ -71,6 +71,7 @@ class MidiPlayer:
     def run(self, sec):
         if self.midiout is None:
             return
+        if sec < self.start_sec: return
         sec6tpb = sec
         sec6tpb -= self.start_sec
         sec6tpb *= self.ticks_per_beat
