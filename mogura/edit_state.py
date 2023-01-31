@@ -1,4 +1,6 @@
 import common
+import gui
+import img
 import math
 import pygame
 import note_state
@@ -56,7 +58,8 @@ class EditState(note_state.NoteState):
             color=(c11,c10,c10),
         )
         
-        text_draw.draw(screen, f'speed={self.runtime.speed_level}', 40, (127,127,127), (matric_screen_size[0]-10,matric_screen_size[1]-10), 3)
+        text_draw.draw(screen, f'speed={self.runtime.speed_level}', 40, (127,127,127), (self.matric_se_control_x1,self.matric_se_control_y), 5)
+        self.gui.draw_layer(screen,'se_control')
 
 
     def event_tick(self, event, sec):
@@ -101,13 +104,37 @@ class EditState(note_state.NoteState):
             vision_offset_y -= mouse_screen_y
             vision_offset_y += self.matric_y0
             self.vision_offset_y = vision_offset_y
+        self.gui.on_event(event)
+        if self.gui.is_btn_active('speed.minus'):
+            self.runtime.speed_level -= 1
+        if self.gui.is_btn_active('speed.plus'):
+            self.runtime.speed_level += 1
 
     def is_ctrl_down(self):
         return self.rctrl_down or self.lctrl_down
 
     def on_active(self):
         self.track_data = self.runtime.midi_data['track_list'][0]
+        self.img_dict = {}
+        self.img_dict['plus']  = img.plus_btn_img()
+        self.img_dict['minus'] = img.minus_btn_img()
         super().on_active()
+
+    def on_inactive(self):
+        super().on_inactive()
+        self.gui = None
+        self.img_dict = None
+
+    def update_ui_matrice(self):
+        super().update_ui_matrice()
+        width,height = self.matric_screen_size
+        self.matric_se_control_x1 = 120
+        self.matric_se_control_x0 = self.matric_se_control_x1-80
+        self.matric_se_control_x2 = self.matric_se_control_x1+80
+        self.matric_se_control_y = height-30
+        self.gui = gui.Gui()
+        self.gui.add_button('speed.minus',self.img_dict['minus'],(self.matric_se_control_x0,self.matric_se_control_y),6,'se_control')
+        self.gui.add_button('speed.plus', self.img_dict['plus'], (self.matric_se_control_x2,self.matric_se_control_y),4,'se_control')
 
     def on_midi_update(self):
         self.track_data = self.runtime.midi_data['track_list'][0]

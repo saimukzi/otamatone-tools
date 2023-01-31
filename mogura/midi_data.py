@@ -563,6 +563,6 @@ def track_to_end_tick(track):
     for msg in track:
         tick += msg.time
         if msg.type != 'cue_marker': continue
-        if msg.type != 'smz-end': continue
+        if msg.text != 'smz-end': continue
         return tick
     return None
