@@ -40,6 +40,11 @@ def track_to_data(track,ticks_per_beat):
     min_pitch = min(min_pitch)
     track_data['min_pitch'] = min_pitch
 
+    tick1 = track_to_end_tick(track)
+    if tick1 is None:
+        tick1 = last_bar_tick(track_data)
+    track_data['tick1'] = tick1
+
     return track_data
 
 
@@ -551,3 +556,13 @@ def get_beat_itr(tick0, tpb):
     while True:
         yield(tick)
         tick += tpb
+
+
+def track_to_end_tick(track):
+    tick = 0
+    for msg in track:
+        tick += msg.time
+        if msg.type != 'cue_marker': continue
+        if msg.type != 'smz-end': continue
+        return tick
+    return None
