@@ -13,8 +13,6 @@ class EditState(note_state.NoteState):
     def __init__(self,runtime):
         super().__init__(runtime)
         self.id = 'EDIT'
-        self.rctrl_down = False
-        self.lctrl_down = False
         
         self.vision_offset_y = 0
         self.gui = None
@@ -58,19 +56,18 @@ class EditState(note_state.NoteState):
             color=(c11,c10,c10),
         )
         
-        #text_draw.draw(screen, f'speed={self.runtime.speed_level}', 40, (127,127,127), (self.matric_se_control_x1,self.matric_se_control_y), 5)
         self.gui.set_text_text('speed.text', f'speed={self.runtime.speed_level}')
+        self.gui.set_text_text('beat_vol.text', f'beat={self.runtime.beat_vol}')
+        self.gui.set_text_text('main_vol.text', f'main={self.runtime.main_vol}')
         self.gui.draw_layer('se_control', screen, text_draw)
 
 
     def event_tick(self, event, sec):
         # print(event)
+        is_ctrl_down  = (pygame.key.get_mods() & pygame.KMOD_CTRL)
+        is_shift_down = (pygame.key.get_mods() & pygame.KMOD_SHIFT)
         if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
             self.runtime.state_pool.set_active('PLAY')
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_RCTRL:
-            self.rctrl_down = True
-        if event.type == pygame.KEYUP and event.key == pygame.K_RCTRL:
-            self.rctrl_down = False
         if event.type == pygame.KEYDOWN and event.key == pygame.K_LCTRL:
             self.lctrl_down = True
         if event.type == pygame.KEYUP and event.key == pygame.K_LCTRL:
@@ -87,9 +84,9 @@ class EditState(note_state.NoteState):
         if event.type == pygame.KEYDOWN and event.key == pygame.K_4:
             mouse_screen_y = pygame.mouse.get_pos()[1]
             self.runtime.play_beat_list[3] = self.y_to_beat(mouse_screen_y)
-        if event.type == pygame.MOUSEWHEEL and not self.is_ctrl_down():
+        if event.type == pygame.MOUSEWHEEL and not is_ctrl_down:
             self.vision_offset_y -= event.y * 60
-        if event.type == pygame.MOUSEWHEEL and self.is_ctrl_down():
+        if event.type == pygame.MOUSEWHEEL and is_ctrl_down:
             mouse_screen_y = pygame.mouse.get_pos()[1]
             mouse_tick = self.y_to_tick(mouse_screen_y, self.vision_offset_y)
         
@@ -107,12 +104,27 @@ class EditState(note_state.NoteState):
             self.vision_offset_y = vision_offset_y
         self.gui.on_event(event)
         if self.gui.is_btn_active('speed.minus'):
-            self.runtime.speed_level -= 1
+            self.runtime.speed_level -= 6 if is_shift_down else 1
         if self.gui.is_btn_active('speed.plus'):
-            self.runtime.speed_level += 1
+            self.runtime.speed_level += 6 if is_shift_down else 1
+        if self.gui.is_btn_active('beat_vol.minus'):
+            self.runtime.beat_vol -= 16 if is_shift_down else 1
+            self.runtime.beat_vol = min(max(0,self.runtime.beat_vol),127)
+        if self.gui.is_btn_active('beat_vol.plus'):
+            self.runtime.beat_vol += 16 if is_shift_down else 1
+            self.runtime.beat_vol = min(max(0,self.runtime.beat_vol),127)
+        if self.gui.is_btn_active('main_vol.minus'):
+            self.runtime.main_vol -= 16 if is_shift_down else 1
+            self.runtime.main_vol = min(max(0,self.runtime.main_vol),127)
+        if self.gui.is_btn_active('main_vol.plus'):
+            self.runtime.main_vol += 16 if is_shift_down else 1
+            self.runtime.main_vol = min(max(0,self.runtime.main_vol),127)
 
-    def is_ctrl_down(self):
-        return self.rctrl_down or self.lctrl_down
+#    def is_ctrl_down(self, event):
+#        return self.rctrl_down or self.lctrl_down
+#
+#    def is_shift_down(self, event):
+#        return self.rshift_down or self.lshift_down
 
     def on_active(self):
         self.track_data = self.runtime.midi_data['track_list'][0]
@@ -129,14 +141,22 @@ class EditState(note_state.NoteState):
     def update_ui_matrice(self):
         super().update_ui_matrice()
         width,height = self.matric_screen_size
-        self.matric_se_control_x1 = 120
-        self.matric_se_control_x0 = self.matric_se_control_x1-80
-        self.matric_se_control_x2 = self.matric_se_control_x1+80
-        self.matric_se_control_y = height-30
+        x1 = 120
+        x0 = x1-80
+        x2 = x1+80
+        y = height-30
         self.gui = gui.Gui()
-        self.gui.add_button('speed.minus',self.img_dict['minus'],(self.matric_se_control_x0,self.matric_se_control_y),6,'se_control')
-        self.gui.add_text('speed.text','',40,(127,127,127), (self.matric_se_control_x1,self.matric_se_control_y), 5,'se_control')
-        self.gui.add_button('speed.plus', self.img_dict['plus'], (self.matric_se_control_x2,self.matric_se_control_y),4,'se_control')
+        self.gui.add_button('speed.minus',self.img_dict['minus'],(x0,y),6,'se_control')
+        self.gui.add_text('speed.text','',40,(127,127,127), (x1,y), 5,'se_control')
+        self.gui.add_button('speed.plus', self.img_dict['plus'], (x2,y),4,'se_control')
+        y -= 40
+        self.gui.add_button('beat_vol.minus',self.img_dict['minus'],(x0,y),6,'se_control')
+        self.gui.add_text('beat_vol.text','',40,(127,127,127), (x1,y), 5,'se_control')
+        self.gui.add_button('beat_vol.plus', self.img_dict['plus'], (x2,y),4,'se_control')
+        y -= 40
+        self.gui.add_button('main_vol.minus',self.img_dict['minus'],(x0,y),6,'se_control')
+        self.gui.add_text('main_vol.text','',40,(127,127,127), (x1,y), 5,'se_control')
+        self.gui.add_button('main_vol.plus', self.img_dict['plus'], (x2,y),4,'se_control')
 
     def on_midi_update(self):
         self.track_data = self.runtime.midi_data['track_list'][0]

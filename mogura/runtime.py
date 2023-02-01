@@ -30,6 +30,8 @@ class Runtime:
         self.init_kargs = kargs
         
         self.speed_level = self.init_kargs['speed']
+        self.beat_vol = 127
+        self.main_vol = 127
 
     def run(self):
         pygame.init()
