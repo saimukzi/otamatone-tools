@@ -58,8 +58,9 @@ class EditState(note_state.NoteState):
             color=(c11,c10,c10),
         )
         
-        text_draw.draw(screen, f'speed={self.runtime.speed_level}', 40, (127,127,127), (self.matric_se_control_x1,self.matric_se_control_y), 5)
-        self.gui.draw_layer(screen,'se_control')
+        #text_draw.draw(screen, f'speed={self.runtime.speed_level}', 40, (127,127,127), (self.matric_se_control_x1,self.matric_se_control_y), 5)
+        self.gui.set_text_text('speed.text', f'speed={self.runtime.speed_level}')
+        self.gui.draw_layer('se_control', screen, text_draw)
 
 
     def event_tick(self, event, sec):
@@ -134,6 +135,7 @@ class EditState(note_state.NoteState):
         self.matric_se_control_y = height-30
         self.gui = gui.Gui()
         self.gui.add_button('speed.minus',self.img_dict['minus'],(self.matric_se_control_x0,self.matric_se_control_y),6,'se_control')
+        self.gui.add_text('speed.text','',40,(127,127,127), (self.matric_se_control_x1,self.matric_se_control_y), 5,'se_control')
         self.gui.add_button('speed.plus', self.img_dict['plus'], (self.matric_se_control_x2,self.matric_se_control_y),4,'se_control')
 
     def on_midi_update(self):
