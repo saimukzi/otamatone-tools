@@ -163,6 +163,7 @@ def track_to_tempo_list(track,end_tick,ticks_per_beat):
     ret_tempo_list.append({
         'tick0': 0,
         'sec6tpb0': 0,
+        'tempo': 1000000,
     })
     tick = 0
     tempo = 0
@@ -180,12 +181,15 @@ def track_to_tempo_list(track,end_tick,ticks_per_beat):
             'sec6tpb0': sec6tpb,
         })
 
-    ret_tempo_list[-1]['tick1'] = end_tick
-    ret_tempo_list[-1]['sec6tpb1'] = (end_tick-ret_tempo_list[-1]['tick0'])*tempo
+    #print(ret_tempo_list[-1])
+    ret_tempo_list[-1]['tick1'] = max(end_tick,tick)
+    ret_tempo_list[-1]['sec6tpb1'] = (ret_tempo_list[-1]['tick1']-ret_tempo_list[-1]['tick0'])*ret_tempo_list[-1]['tempo']+ret_tempo_list[-1]['sec6tpb0']
     
     ret_tempo_list = filter(lambda i:i['tick0']<i['tick1'],ret_tempo_list)
     ret_tempo_list = filter(lambda i:i['sec6tpb0']<i['sec6tpb1'],ret_tempo_list)
     ret_tempo_list = list(ret_tempo_list)
+    
+    _check_tempo_list(ret_tempo_list)
     
     return ret_tempo_list
 
@@ -207,7 +211,7 @@ def tick_to_sec6tpb(tick, tempo_list):
 
 def sec6tpb_to_tick(sec6tpb, tempo_list):
     #print(f'IVBIQPSQAA sec6tpb={sec6tpb}, tempo_list={tempo_list}')
-    if sec6tpb <= 0:
+    if sec6tpb <= tempo_list[0]['sec6tpb1']:
         tempo = tempo_list[0]
     if sec6tpb >= tempo_list[-1]['sec6tpb0']:
         tempo = tempo_list[-1]
@@ -216,8 +220,9 @@ def sec6tpb_to_tick(sec6tpb, tempo_list):
         tempo = filter(lambda i:i['sec6tpb0']<=sec6tpb,tempo)
         tempo = filter(lambda i:i['sec6tpb1']>sec6tpb,tempo)
         tempo = list(tempo)
-        #print(f'DWKUYTSJIC sec6tpb={sec6tpb}, tempo={tempo}')
-        assert(len(tempo)==1)
+        if len(tempo) != 1:
+            print(tempo)
+            assert(False)
         tempo = tempo[0]
     return (sec6tpb-tempo['sec6tpb0'])/tempo['tempo']+tempo['tick0']
 
@@ -227,6 +232,8 @@ def track_data_chop_tick(track_data, start_bar_tick, start_note_tick, end_note_t
     start_note_sec6tpb = tick_to_sec6tpb(start_note_tick, track_data['tempo_list'])
     end_note_sec6tpb   = tick_to_sec6tpb(end_note_tick,   track_data['tempo_list'])
     end_bar_sec6tpb    = tick_to_sec6tpb(end_bar_tick,    track_data['tempo_list'])
+
+    _check_tempo_list(track_data['tempo_list'])
 
     out_track_data = copy.deepcopy(track_data)
     noteev_list = out_track_data['noteev_list']
@@ -259,7 +266,11 @@ def track_data_chop_tick(track_data, start_bar_tick, start_note_tick, end_note_t
     time_signature_list = filter(lambda i:i['tick1']>start_bar_tick, time_signature_list)
     time_signature_list = filter(lambda i:i['tick0']<end_bar_tick,   time_signature_list)
     time_signature_list = list(time_signature_list)
+    for time_signature in time_signature_list:
+        time_signature['tick0'] = max(time_signature['tick0'], start_bar_tick)
+        time_signature['tick1'] = min(time_signature['tick1'], end_bar_tick)
     time_signature_list[-1]['tick1'] = INF
+    out_track_data['time_signature_list'] = time_signature_list
 
     tempo_list = out_track_data['tempo_list']
     tempo_list = filter(lambda i:i['tick1']> start_bar_tick,tempo_list)
@@ -271,6 +282,8 @@ def track_data_chop_tick(track_data, start_bar_tick, start_note_tick, end_note_t
         tempo['sec6tpb0'] = max(tempo['sec6tpb0'], start_bar_sec6tpb)
         tempo['sec6tpb1'] = min(tempo['sec6tpb1'], end_bar_sec6tpb)
     out_track_data['tempo_list'] = tempo_list
+    _check_tempo_list(track_data['tempo_list'])
+
     return out_track_data
 
 def _track_data_chop_time_noteev_filter(start_tick, end_tick):
@@ -566,3 +579,12 @@ def track_to_end_tick(track):
         if msg.text != 'smz-end': continue
         return tick
     return None
+
+
+def _check_tempo_list(tempo_list):
+    for tempo in tempo_list:
+        tick = tempo['tick1']-tempo['tick0']
+        sec6tpb = tempo['sec6tpb1']-tempo['sec6tpb0']
+        if sec6tpb / tick != tempo['tempo']:
+            print(f'ZMDWEARIJR tempo={tempo}, sec6tpb/tick={sec6tpb/tick}')
+            assert(False)
