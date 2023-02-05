@@ -248,7 +248,7 @@ def track_data_chop_tick(track_data, start_bar_tick, start_note_tick, end_note_t
     # for time_signature in time_signature_list:
     #     time_signature['tick0'] = max(time_signature['tick0'], start_bar_tick)
     #     time_signature['tick1'] = min(time_signature['tick1'], end_bar_tick)
-    time_signature_list[0]['tick']   = -INF
+    time_signature_list[0]['tick0']  = -INF
     time_signature_list[-1]['tick1'] = INF
     _check_time_signature_list(time_signature_list)
     out_track_data['time_signature_list'] = time_signature_list
