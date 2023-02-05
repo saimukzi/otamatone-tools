@@ -167,10 +167,10 @@ class PlayState(note_state.NoteState):
         self.track_data = display_track_data
         self.loop_sec6tpb = midi_data.tick_to_sec6tpb(tick_30, play_track_data['tempo_list'], time_multiplier)
 
-        self.start_sec = time.time() + 2
+        self.start_sec = time.time() + 3
         self.runtime.midi_player.channel_to_volume_dict[0]  = self.runtime.main_vol
         self.runtime.midi_player.channel_to_volume_dict[15] = self.runtime.beat_vol
-        self.runtime.midi_player.play(play_track_data['noteev_list'],self.loop_sec6tpb,play_track_data['ticks_per_beat'],self.start_sec-0.15)
+        self.runtime.midi_player.play(play_track_data['noteev_list'],self.loop_sec6tpb,play_track_data['ticks_per_beat'],self.start_sec-0.15,self.start_sec-2-0.15)
 
         super().on_active()
 

@@ -328,6 +328,7 @@ def track_data_move_tick(track_data, tick_diff):
     for time_signature in time_signature_list:
         time_signature['tick0'] += tick_diff
         time_signature['tick1'] += tick_diff
+        time_signature['tick_anchor'] += tick_diff
 
     tempo_list = out_track_data['tempo_list']
     for tempo in tempo_list:
@@ -549,13 +550,14 @@ def last_bar_tick(track_data):
     tick = track_data['noteev_list']
     tick = list(filter(lambda i:i['type']=='on',tick))[-1]['tick1']
     ts = track_data['time_signature_list'][-1]
+    bar_tick = get_bar_tick(ts, tpb)
     assert(tick>=ts['tick0'])
-    tick -= ts['tick0']
-    tick = math.ceil(tick*ts['denominator']/4/ts['numerator']/tpb)
-    tick = tick*tpb*4*ts['numerator']/ts['denominator']
+    tick -= ts['tick_anchor']
+    tick = math.ceil(tick/bar_tick)
+    tick = tick*bar_tick
     assert(tick==math.floor(tick))
     tick = math.floor(tick)
-    tick += ts['tick0']
+    tick += ts['tick_anchor']
     return tick
 
 def get_bar_itr(tick0, track_data):
