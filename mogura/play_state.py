@@ -25,7 +25,7 @@ class PlayState(note_state.NoteState):
         vision_offset_y *= self.matric_ticks_per_beat
         # vision_offset_y %= self.track_data['sec6tpb']
         vision_offset_y %= self.loop_sec6tpb
-        vision_offset_y = midi_data.sec6tpb_to_tick(vision_offset_y, self.track_data['tempo_list'])
+        vision_offset_y = midi_data.sec6tpb_to_tick(vision_offset_y, self.track_data['tempo_list'], self.track_data['time_multiplier'])
         vision_offset_y /= self.matric_ticks_per_beat
         vision_offset_y *= self.matric_cell_width
         self.draw_note_rail(screen, vision_offset_y)
@@ -137,34 +137,35 @@ class PlayState(note_state.NoteState):
         #print(self.runtime.play_beat_list)
         play_track_data = copy.deepcopy(self.runtime.midi_data['track_list'][0])
         play_tick_list    = list(map(lambda i:i*play_track_data['ticks_per_beat'],self.runtime.play_beat_list))
-        play_sec6tpb_list = list(map(lambda i:midi_data.tick_to_sec6tpb(i,play_track_data['tempo_list']),play_tick_list))
+        # play_sec6tpb_list = list(map(lambda i:midi_data.tick_to_sec6tpb(i,play_track_data['tempo_list']),play_tick_list))
         play_track_data = midi_data.track_data_chop_tick(play_track_data, *play_tick_list)
         play_track_data = midi_data.track_data_move_tick(play_track_data, -play_tick_list[0])
-        play_track_data = midi_data.track_data_move_sec6tpb(play_track_data, -play_sec6tpb_list[0])
+        # play_track_data = midi_data.track_data_move_sec6tpb(play_track_data, -play_sec6tpb_list[0])
         
         tick_30    = play_tick_list[3]-play_tick_list[0]
-        sec6tpb_30 = play_sec6tpb_list[3]-play_sec6tpb_list[0]
+        # sec6tpb_30 = play_sec6tpb_list[3]-play_sec6tpb_list[0]
         #print(f'YDXUFZLYQK tick_30={tick_30}, sec6tpb_30={sec6tpb_30}, play_tick_list={play_tick_list}, play_sec6tpb_list={play_sec6tpb_list}')
         display_track_data = copy.deepcopy(play_track_data)
         display_track_data0 = copy.deepcopy(display_track_data)
         display_track_data0 = midi_data.track_data_move_tick(display_track_data0, -tick_30)
-        display_track_data0 = midi_data.track_data_move_sec6tpb(display_track_data0, -sec6tpb_30)
+        # display_track_data0 = midi_data.track_data_move_sec6tpb(display_track_data0, -sec6tpb_30)
         display_track_data1 = copy.deepcopy(display_track_data)
         display_track_data1 = midi_data.track_data_move_tick(display_track_data1, tick_30)
-        display_track_data1 = midi_data.track_data_move_sec6tpb(display_track_data1, sec6tpb_30)
+        # display_track_data1 = midi_data.track_data_move_sec6tpb(display_track_data1, sec6tpb_30)
         # for dm in display_track_data0['noteev_list']: dm['src']='0'
         # for dm in display_track_data['noteev_list']:  dm['src']='1'
         # for dm in display_track_data1['noteev_list']: dm['src']='2'
-        display_track_data = midi_data.merge_track_data([display_track_data,display_track_data0,display_track_data1])
+        display_track_data = midi_data.merge_track_data([display_track_data0,display_track_data,display_track_data1],[0,tick_30])
 
         play_track_data = midi_data.track_data_add_woodblock(play_track_data, 0, tick_30)
         
         time_multiplier = self.runtime.time_multiplier()
-        play_track_data = midi_data.track_data_time_multiply(play_track_data, time_multiplier)
-        display_track_data = midi_data.track_data_time_multiply(display_track_data, time_multiplier)
-
+        # play_track_data = midi_data.track_data_time_multiply(play_track_data, time_multiplier)
+        # display_track_data = midi_data.track_data_time_multiply(display_track_data, time_multiplier)
+        midi_data.fill_sec6tpb(play_track_data, time_multiplier)
+        midi_data.fill_sec6tpb(display_track_data, time_multiplier)
         self.track_data = display_track_data
-        self.loop_sec6tpb = sec6tpb_30 * time_multiplier
+        self.loop_sec6tpb = midi_data.tick_to_sec6tpb(tick_30, play_track_data['tempo_list'], time_multiplier)
 
         self.start_sec = time.time() + 2
         self.runtime.midi_player.channel_to_volume_dict[0]  = self.runtime.main_vol

@@ -24,11 +24,11 @@ def track_to_data(track,ticks_per_beat):
     track_data['ticks_per_beat'] = ticks_per_beat
     track_data['name'] = track.name
     track_data['noteev_list'] = track_to_noteev_list(track)
-    end_tick = track_data['noteev_list'][-1]['tick']
+#    end_tick = track_data['noteev_list'][-1]['tick']
 #    track_data['bar_list']   = track_to_bar_list(track,end_tick,ticks_per_beat)
 #    track_data['bar_set']    = set(track_data['bar_list'])
     track_data['time_signature_list'] = track_to_time_signature_list(track)
-    track_data['tempo_list'] = track_to_tempo_list(track,end_tick,ticks_per_beat)
+    track_data['tempo_list'] = track_to_tempo_list(track,ticks_per_beat)
 
     max_pitch = track_data['noteev_list']
     max_pitch = map(lambda i:i['pitch'],max_pitch)
@@ -52,26 +52,21 @@ def track_to_noteev_list(track):
     ret_noteev_list = []
     tick = 0
     tempo = 0
-    sec6tpb = 0
     for msg in track:
         tick += msg.time
-        sec6tpb += msg.time * tempo
         if msg.type == 'note_on' and msg.velocity > 0:
             noteev = {
                 'tick':tick,
-                'sec6tpb':sec6tpb,
                 'type':'on',
                 'channel':0,
                 'pitch':msg.note,
                 'tick0':tick,
-                'sec6tpb0':sec6tpb,
             }
             noteev = (tick,1,msg.channel,msg.note,noteev)
             ret_noteev_list.append(noteev)
         elif msg.type == 'note_off' or msg.type == 'note_on':
             noteev = {
                 'tick':tick,
-                'sec6tpb':sec6tpb,
                 'type':'off',
                 'channel':0,
                 'pitch':msg.note,
@@ -94,7 +89,6 @@ def track_to_noteev_list(track):
             cp = (noteev['channel'],noteev['pitch'])
             noteev0 = cp_to_noteev_dict[cp]
             noteev0['tick1'] = noteev['tick']
-            noteev0['sec6tpb1'] = noteev['sec6tpb']
             del cp_to_noteev_dict[cp]
     
     return ret_noteev_list
@@ -158,81 +152,64 @@ def track_to_time_signature_list(track):
     return time_signature_list
 
 
-def track_to_tempo_list(track,end_tick,ticks_per_beat):
+def track_to_tempo_list(track,ticks_per_beat):
     ret_tempo_list = []
     ret_tempo_list.append({
         'tick0': 0,
-        'sec6tpb0': 0,
-        'tempo': 1000000,
+        'tempo': 500000,
     })
     tick = 0
     tempo = 0
-    sec6tpb = 0
     for msg in track:
         tick += msg.time
-        sec6tpb += msg.time * tempo
         if msg.type != 'set_tempo': continue
         tempo = msg.tempo
         ret_tempo_list[-1]['tick1'] = tick
-        ret_tempo_list[-1]['sec6tpb1'] = sec6tpb
         ret_tempo_list.append({
             'tempo': msg.tempo,
             'tick0': tick,
-            'sec6tpb0': sec6tpb,
         })
 
     #print(ret_tempo_list[-1])
-    ret_tempo_list[-1]['tick1'] = max(end_tick,tick)
-    ret_tempo_list[-1]['sec6tpb1'] = (ret_tempo_list[-1]['tick1']-ret_tempo_list[-1]['tick0'])*ret_tempo_list[-1]['tempo']+ret_tempo_list[-1]['sec6tpb0']
+    #ret_tempo_list[-1]['tick1'] = max(end_tick,tick)
+    ret_tempo_list[-1]['tick1'] = INF
     
     ret_tempo_list = filter(lambda i:i['tick0']<i['tick1'],ret_tempo_list)
-    ret_tempo_list = filter(lambda i:i['sec6tpb0']<i['sec6tpb1'],ret_tempo_list)
     ret_tempo_list = list(ret_tempo_list)
+    ret_tempo_list[0]['tick0'] = -INF
     
     _check_tempo_list(ret_tempo_list)
     
     return ret_tempo_list
 
 
-def tick_to_sec6tpb(tick, tempo_list):
+def tick_to_sec6tpb(tick, tempo_list, time_multiplier):
     #print(f'HGWHMWQKXA tick={tick}, tempo_list={tempo_list}')
-    if tick < tempo_list[0]['tick1']:
-        tempo = tempo_list[0]
-    elif tick >= tempo_list[-1]['tick0']:
-        tempo = tempo_list[-1]
-    else:
-        tempo = tempo_list
-        tempo = filter(lambda i:i['tick0']<=tick,tempo)
-        tempo = filter(lambda i:i['tick1']>tick,tempo)
-        assert(len(tempo))
-        tempo = tempo[0]
-    return (tick-tempo['tick0'])*tempo['tempo']+tempo['sec6tpb0']
+    tempo = tempo_list
+    tempo = filter(lambda i:i['tick0']<=tick,tempo)
+    tempo = filter(lambda i:i['tick1']>tick,tempo)
+    tempo = list(tempo)
+    if len(tempo) != 1:
+        print(f'tick={tick}, tempo={tempo}')
+        assert(False)
+    tempo = tempo[0]
+    return (tick-tempo['tick_anchor'])*tempo['tempo']*time_multiplier+tempo['sec6tpb_anchor']
 
 
-def sec6tpb_to_tick(sec6tpb, tempo_list):
+def sec6tpb_to_tick(sec6tpb, tempo_list, time_multiplier):
     #print(f'IVBIQPSQAA sec6tpb={sec6tpb}, tempo_list={tempo_list}')
-    if sec6tpb <= tempo_list[0]['sec6tpb1']:
-        tempo = tempo_list[0]
-    if sec6tpb >= tempo_list[-1]['sec6tpb0']:
-        tempo = tempo_list[-1]
-    else:
-        tempo = tempo_list
-        tempo = filter(lambda i:i['sec6tpb0']<=sec6tpb,tempo)
-        tempo = filter(lambda i:i['sec6tpb1']>sec6tpb,tempo)
-        tempo = list(tempo)
-        if len(tempo) != 1:
-            print(tempo)
-            assert(False)
-        tempo = tempo[0]
-    return (sec6tpb-tempo['sec6tpb0'])/tempo['tempo']+tempo['tick0']
+    tempo = tempo_list
+    tempo = filter(lambda i:i['sec6tpb0']<=sec6tpb,tempo)
+    tempo = filter(lambda i:i['sec6tpb1']>sec6tpb,tempo)
+    tempo = list(tempo)
+    if len(tempo) != 1:
+        print(tempo)
+        assert(False)
+    tempo = tempo[0]
+    return (sec6tpb-tempo['sec6tpb_anchor'])/tempo['tempo']/time_multiplier+tempo['tick_anchor']
 
 
 def track_data_chop_tick(track_data, start_bar_tick, start_note_tick, end_note_tick, end_bar_tick):
-    start_bar_sec6tpb  = tick_to_sec6tpb(start_bar_tick,  track_data['tempo_list'])
-    start_note_sec6tpb = tick_to_sec6tpb(start_note_tick, track_data['tempo_list'])
-    end_note_sec6tpb   = tick_to_sec6tpb(end_note_tick,   track_data['tempo_list'])
-    end_bar_sec6tpb    = tick_to_sec6tpb(end_bar_tick,    track_data['tempo_list'])
-
     _check_tempo_list(track_data['tempo_list'])
 
     out_track_data = copy.deepcopy(track_data)
@@ -243,9 +220,6 @@ def track_data_chop_tick(track_data, start_bar_tick, start_note_tick, end_note_t
         noteev['tick0'] = max(noteev['tick0'], start_note_tick)
         noteev['tick1'] = min(noteev['tick1'], end_note_tick)
         noteev['tick'] = noteev['tick0']
-        noteev['sec6tpb0'] = max(noteev['sec6tpb0'], start_note_sec6tpb)
-        noteev['sec6tpb1'] = min(noteev['sec6tpb1'], end_note_sec6tpb)
-        noteev['sec6tpb'] = noteev['sec6tpb0']
 
     noteev_off_list = map(_on_noteev_to_off_noteev, noteev_list)
     noteev_off_list = list(noteev_off_list)
@@ -273,16 +247,17 @@ def track_data_chop_tick(track_data, start_bar_tick, start_note_tick, end_note_t
     out_track_data['time_signature_list'] = time_signature_list
 
     tempo_list = out_track_data['tempo_list']
+    _check_tempo_list(tempo_list)
     tempo_list = filter(lambda i:i['tick1']> start_bar_tick,tempo_list)
     tempo_list = filter(lambda i:i['tick0']< end_bar_tick  ,tempo_list)
     tempo_list = list(tempo_list)
-    for tempo in tempo_list:
-        tempo['tick0'] = max(tempo['tick0'], start_bar_tick)
-        tempo['tick1'] = min(tempo['tick1'], end_bar_tick)
-        tempo['sec6tpb0'] = max(tempo['sec6tpb0'], start_bar_sec6tpb)
-        tempo['sec6tpb1'] = min(tempo['sec6tpb1'], end_bar_sec6tpb)
+    #for tempo in tempo_list:
+    #    tempo['tick0'] = max(tempo['tick0'], start_bar_tick)
+    #    tempo['tick1'] = min(tempo['tick1'], end_bar_tick)
+    tempo_list[0]['tick0'] = -INF
+    tempo_list[-1]['tick1'] = INF
+    _check_tempo_list(tempo_list)
     out_track_data['tempo_list'] = tempo_list
-    _check_tempo_list(track_data['tempo_list'])
 
     return out_track_data
 
@@ -298,7 +273,6 @@ def _on_noteev_to_off_noteev(noteev):
     #print(f'noteev={noteev}')
     ret_data = {
         'tick':noteev['tick1'],
-        'sec6tpb':noteev['sec6tpb1'],
         'type':'off',
         'channel':noteev['channel'],
         'pitch':noteev['pitch'],
@@ -318,8 +292,6 @@ def _tempo_sort_key(tempo):
     return (
         tempo['tick0'],
         tempo['tick1'],
-        tempo['sec6tpb0'],
-        tempo['sec6tpb1'],
         tempo['tempo'],
     )
 
@@ -357,19 +329,19 @@ def track_data_move_tick(track_data, tick_diff):
 
     return out_track_data
 
-def track_data_move_sec6tpb(track_data, sec6tpb_diff):
-    out_track_data = copy.deepcopy(track_data)
-    noteev_list = out_track_data['noteev_list']
-    for noteev in noteev_list:
-        if 'sec6tpb' in noteev:  noteev['sec6tpb']+=sec6tpb_diff
-        if 'sec6tpb0' in noteev: noteev['sec6tpb0']+=sec6tpb_diff
-        if 'sec6tpb1' in noteev: noteev['sec6tpb1']+=sec6tpb_diff
-
-    tempo_list = out_track_data['tempo_list']
-    for tempo in tempo_list:
-        tempo['sec6tpb0'] += sec6tpb_diff
-        tempo['sec6tpb1'] += sec6tpb_diff
-    return out_track_data
+# def track_data_move_sec6tpb(track_data, sec6tpb_diff):
+#     out_track_data = copy.deepcopy(track_data)
+#     noteev_list = out_track_data['noteev_list']
+#     for noteev in noteev_list:
+#         if 'sec6tpb' in noteev:  noteev['sec6tpb']+=sec6tpb_diff
+#         if 'sec6tpb0' in noteev: noteev['sec6tpb0']+=sec6tpb_diff
+#         if 'sec6tpb1' in noteev: noteev['sec6tpb1']+=sec6tpb_diff
+# 
+#     tempo_list = out_track_data['tempo_list']
+#     for tempo in tempo_list:
+#         tempo['sec6tpb0'] += sec6tpb_diff
+#         tempo['sec6tpb1'] += sec6tpb_diff
+#     return out_track_data
 
 # def merge_track_data(track_data_list):
 #     output_data = {}
@@ -392,7 +364,9 @@ def track_data_move_sec6tpb(track_data, sec6tpb_diff):
 # 
 #     return output_data
 
-def merge_track_data(src_track_data_list):
+def merge_track_data(src_track_data_list, tick_list):
+    assert(len(tick_list)+1 == len(src_track_data_list))
+
     output_track_data = {}
     output_track_data['name'] = src_track_data_list[0]['name']
     
@@ -432,8 +406,17 @@ def merge_track_data(src_track_data_list):
         time_signature0['tick1'] = time_signature1['tick0']
     output_track_data['time_signature_list']= time_signature_list
 
-    src_tempo_list = itertools.chain(*list(map(lambda i:i['tempo_list'],src_track_data_list)))
-    src_tempo_list = sorted(src_tempo_list, key=_tempo_sort_key)
+    src_tempo_list_list = copy.deepcopy(list(map(lambda i:i['tempo_list'],src_track_data_list)))
+    for src_tempo_list in src_tempo_list_list:
+        #print(src_tempo_list)
+        _check_tempo_list(src_tempo_list)
+    for i in range(len(tick_list)):
+        src_tempo_list_list[i][-1]['tick1'] = tick_list[i]
+        src_tempo_list_list[i+1][0]['tick0'] = tick_list[i]
+    out_tempo_list = itertools.chain(*src_tempo_list_list)
+    out_tempo_list = list(out_tempo_list)
+    _check_tempo_list(out_tempo_list)
+    #src_tempo_list = sorted(src_tempo_list, key=_tempo_sort_key)
     #print(json.dumps(tempo_list,indent=2))
     #for i in range(len(tempo_list)-1):
     #    tempo0 = tempo_list[i]
@@ -442,23 +425,23 @@ def merge_track_data(src_track_data_list):
     #    assert(tempo0['sec6tpb1']==tempo1['sec6tpb0'])
     #output_track_data['tempo_list'] = tempo_list
     # print(f'AVYZPMFEOG src_tempo_list={src_tempo_list}')
-    out_tempo_list = []
-    out_tempo_list.append(src_tempo_list[0])
-    for src_tempo in src_tempo_list[1:]:
-        assert(src_tempo['tick0']>=out_tempo_list[-1]['tick1'])
-        assert(src_tempo['sec6tpb0']>=out_tempo_list[-1]['sec6tpb1'])
-        if src_tempo['tick0'] > out_tempo_list[-1]['tick1']:
-            tick = src_tempo['tick0'] - out_tempo_list[-1]['tick1']
-            sec6tpb = src_tempo['sec6tpb0'] - out_tempo_list[-1]['sec6tpb1']
-            tempo = {
-                'tempo': sec6tpb/tick,
-                'tick0': out_tempo_list[-1]['tick1'],
-                'sec6tpb0': out_tempo_list[-1]['sec6tpb1'],
-                'tick1': src_tempo['tick0'],
-                'sec6tpb1': src_tempo['sec6tpb0'],
-            }
-            out_tempo_list.append(tempo)
-        out_tempo_list.append(src_tempo)
+    # out_tempo_list = []
+    # out_tempo_list.append(src_tempo_list[0])
+    # for src_tempo in src_tempo_list[1:]:
+    #     assert(src_tempo['tick0']>=out_tempo_list[-1]['tick1'])
+    #     assert(src_tempo['sec6tpb0']>=out_tempo_list[-1]['sec6tpb1'])
+    #     if src_tempo['tick0'] > out_tempo_list[-1]['tick1']:
+    #         tick = src_tempo['tick0'] - out_tempo_list[-1]['tick1']
+    #         sec6tpb = src_tempo['sec6tpb0'] - out_tempo_list[-1]['sec6tpb1']
+    #         tempo = {
+    #             'tempo': sec6tpb/tick,
+    #             'tick0': out_tempo_list[-1]['tick1'],
+    #             'sec6tpb0': out_tempo_list[-1]['sec6tpb1'],
+    #             'tick1': src_tempo['tick0'],
+    #             'sec6tpb1': src_tempo['sec6tpb0'],
+    #         }
+    #         out_tempo_list.append(tempo)
+    #     out_tempo_list.append(src_tempo)
     #print(f'TVNNIFCPIK out_tempo_list={out_tempo_list}')
     output_track_data['tempo_list'] = out_tempo_list
 
@@ -467,21 +450,43 @@ def merge_track_data(src_track_data_list):
     
     return output_track_data
 
-# time_multiplier: >1: slower, <1: faster
-def track_data_time_multiply(track_data, time_multiplier):
-    out_track_data = copy.deepcopy(track_data)
-    for noteev in out_track_data['noteev_list']:
-        if 'sec6tpb'  in noteev: noteev['sec6tpb']  *= time_multiplier
-        if 'sec6tpb0' in noteev: noteev['sec6tpb0'] *= time_multiplier
-        if 'sec6tpb1' in noteev: noteev['sec6tpb1'] *= time_multiplier
+# # time_multiplier: >1: slower, <1: faster
+# def track_data_time_multiply(track_data, time_multiplier):
+#     out_track_data = copy.deepcopy(track_data)
+#     # for noteev in out_track_data['noteev_list']:
+#     #     if 'sec6tpb'  in noteev: noteev['sec6tpb']  *= time_multiplier
+#     #     if 'sec6tpb0' in noteev: noteev['sec6tpb0'] *= time_multiplier
+#     #     if 'sec6tpb1' in noteev: noteev['sec6tpb1'] *= time_multiplier
+# 
+#     for tempo in out_track_data['tempo_list']:
+#         tempo['tempo']    *= time_multiplier
+#         tempo['sec6tpb0'] *= time_multiplier
+#         tempo['sec6tpb1'] *= time_multiplier
+# 
+#     return out_track_data
 
-    for tempo in out_track_data['tempo_list']:
-        tempo['tempo']    *= time_multiplier
-        tempo['sec6tpb0'] *= time_multiplier
-        tempo['sec6tpb1'] *= time_multiplier
 
-    return out_track_data
-
+def fill_sec6tpb(track_data, time_multiplier):
+    track_data['time_multiplier'] = time_multiplier
+    tempo_list = track_data['tempo_list']
+    _check_tempo_list(tempo_list)
+    sec6tpb = 0
+    tick = 0
+    for tempo in tempo_list:
+        tempo['sec6tpb0'] = sec6tpb
+        tempo['tick_anchor'] = tick
+        tempo['sec6tpb_anchor'] = sec6tpb
+        tick_inc = tempo['tick1']-tick
+        sec6tpb_inc = tick_inc*tempo['tempo']*time_multiplier
+        tick += tick_inc
+        sec6tpb += sec6tpb_inc
+        tempo['sec6tpb1'] = sec6tpb
+    tempo_list[0]['sec6tpb0'] = -INF
+    tempo_list[-1]['sec6tpb0'] = INF
+    for noteev in track_data['noteev_list']:
+        if 'tick'  in noteev: noteev['sec6tpb']  = tick_to_sec6tpb(noteev['tick'],  tempo_list, time_multiplier)
+        if 'tick0' in noteev: noteev['sec6tpb0'] = tick_to_sec6tpb(noteev['tick0'], tempo_list, time_multiplier)
+        if 'tick1' in noteev: noteev['sec6tpb1'] = tick_to_sec6tpb(noteev['tick1'], tempo_list, time_multiplier)
 
 def track_data_add_woodblock(track_data, start_tick, end_tick):
     out_track_data = copy.deepcopy(track_data)
@@ -501,15 +506,10 @@ def track_data_add_woodblock(track_data, start_tick, end_tick):
         pitch = 84 if i == bar else 60
         tick0 = i
         tick1 = i+tpb//2
-        sec6tpb0 = tick_to_sec6tpb(tick0, out_track_data['tempo_list'])
-        sec6tpb1 = tick_to_sec6tpb(tick1, out_track_data['tempo_list'])
         on_noteev_list.append({
             'tick':tick0,
             'tick0':tick0,
             'tick1':tick1,
-            'sec6tpb':sec6tpb0,
-            'sec6tpb0':sec6tpb0,
-            'sec6tpb1':sec6tpb1,
             'type':'on',
             'pitch':pitch,
             'channel':15,
@@ -582,9 +582,9 @@ def track_to_end_tick(track):
 
 
 def _check_tempo_list(tempo_list):
+    assert(tempo_list[0]['tick0']==-INF)
+    assert(tempo_list[-1]['tick1']==INF)
     for tempo in tempo_list:
         tick = tempo['tick1']-tempo['tick0']
-        sec6tpb = tempo['sec6tpb1']-tempo['sec6tpb0']
-        if sec6tpb / tick != tempo['tempo']:
-            print(f'ZMDWEARIJR tempo={tempo}, sec6tpb/tick={sec6tpb/tick}')
-            assert(False)
+    for i in range(len(tempo_list)-1):
+        assert(tempo_list[i]['tick1']==tempo_list[i+1]['tick0'])
