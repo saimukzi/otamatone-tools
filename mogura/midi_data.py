@@ -575,7 +575,6 @@ def get_bar_itr(tick0, track_data):
     tick += ts['tick_anchor']
     while True:
         yield(tick)
-        tick += bar_tick
         if tick >= ts['tick1']:
             tsi += 1
             # tick = time_signature_list[tsi]['tick0']
@@ -584,6 +583,7 @@ def get_bar_itr(tick0, track_data):
             tick -= ts['tick_anchor']
             tick = math.ceil(tick/bar_tick)*bar_tick
             tick += ts['tick_anchor']
+        tick += bar_tick
 
 
 def get_bar_tick(ts, tpb):
