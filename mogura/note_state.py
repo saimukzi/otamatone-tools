@@ -148,15 +148,15 @@ class NoteState(null_state.NullState):
 
         self.matric_ticks_per_beat = self.runtime.midi_data['ticks_per_beat']
 
-        self.matric_max_pitch = track_data['max_pitch'] + 2
-        self.matric_min_pitch = track_data['min_pitch'] - 2
-        pitch_diff = self.matric_max_pitch - self.matric_min_pitch
+        self.matric_pitch1 = track_data['pitch1'] + 2
+        self.matric_pitch0 = track_data['pitch0'] - 2
+        pitch_diff = self.matric_pitch1 - self.matric_pitch0
         self.matric_note_rail_x0 = (screen_size[0]-pitch_diff*self.matric_cell_width//4)//2
         self.matric_note_rail_x1 = self.matric_note_rail_x0+pitch_diff*self.matric_cell_width//4
 
         self.matric_note_rail_bg_rect_data_list = []
-        pitch = self.matric_min_pitch
-        while pitch < self.matric_max_pitch:
+        pitch = self.matric_pitch0
+        while pitch < self.matric_pitch1:
             pitch1 = pitch
             pitch1 += 300
             pitch1 -= PITCH_A4
@@ -165,9 +165,9 @@ class NoteState(null_state.NullState):
             pitch1 *= 4
             pitch1 += PITCH_A4
             pitch1 -= 300
-            pitch1 = min(pitch1,self.matric_max_pitch)
-            x1 = self.matric_note_rail_x0 + (self.matric_max_pitch-pitch )*self.matric_cell_width // 4
-            x0 = self.matric_note_rail_x0 + (self.matric_max_pitch-pitch1)*self.matric_cell_width // 4
+            pitch1 = min(pitch1,self.matric_pitch1)
+            x1 = self.matric_note_rail_x0 + (self.matric_pitch1-pitch )*self.matric_cell_width // 4
+            x0 = self.matric_note_rail_x0 + (self.matric_pitch1-pitch1)*self.matric_cell_width // 4
             c = pitch
             c += 300
             c -= PITCH_A4
@@ -183,7 +183,7 @@ class NoteState(null_state.NullState):
             pitch = pitch1
 
         self.matric_note_rail_pitch_line_data_list = []
-        pitch = self.matric_min_pitch
+        pitch = self.matric_pitch0
         pitch += 300
         pitch -= PITCH_A4
         pitch /= 4
@@ -191,7 +191,7 @@ class NoteState(null_state.NullState):
         pitch *= 4
         pitch += PITCH_A4
         pitch -= 300
-        while pitch <= self.matric_max_pitch:
+        while pitch <= self.matric_pitch1:
             p = pitch
             p += 300
             p -= PITCH_A4
@@ -286,7 +286,7 @@ class NoteState(null_state.NullState):
 
 
     def pitch_to_x(self,pitch):
-        return self.matric_note_rail_x0 + (self.matric_max_pitch-pitch )*self.matric_cell_width // 4
+        return self.matric_note_rail_x0 + (self.matric_pitch1-pitch )*self.matric_cell_width // 4
 
     def tick_to_y(self,tick,vision_offset_y):
         ret = tick

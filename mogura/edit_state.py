@@ -59,6 +59,7 @@ class EditState(note_state.NoteState):
         self.gui.set_text_text('speed.text', f'speed={self.runtime.speed_level}')
         self.gui.set_text_text('beat_vol.text', f'beat={self.runtime.beat_vol}')
         self.gui.set_text_text('main_vol.text', f'main={self.runtime.main_vol}')
+        self.gui.set_text_text('pitch_adj.text', f'pitch={self.runtime.pitch_adj}')
         self.gui.draw_layer('se_control', screen, text_draw)
 
 
@@ -119,6 +120,20 @@ class EditState(note_state.NoteState):
         if self.gui.is_btn_active('main_vol.plus'):
             self.runtime.main_vol += 16 if is_shift_down else 1
             self.runtime.main_vol = min(max(0,self.runtime.main_vol),127)
+        if self.gui.is_btn_active('pitch_adj.minus'):
+            self.runtime.pitch_adj -= 4 if is_shift_down else 1
+            self.runtime.pitch_adj = min(max(
+                -self.runtime.midi_data['track_list'][0]['pitch0'],
+                self.runtime.pitch_adj),
+                127-self.runtime.midi_data['track_list'][0]['pitch1']
+            )
+        if self.gui.is_btn_active('pitch_adj.plus'):
+            self.runtime.pitch_adj += 4 if is_shift_down else 1
+            self.runtime.pitch_adj = min(max(
+                -self.runtime.midi_data['track_list'][0]['pitch0'],
+                self.runtime.pitch_adj),
+                127-self.runtime.midi_data['track_list'][0]['pitch1']
+            )
 
 #    def is_ctrl_down(self, event):
 #        return self.rctrl_down or self.lctrl_down
@@ -157,6 +172,10 @@ class EditState(note_state.NoteState):
         self.gui.add_button('main_vol.minus',self.img_dict['minus'],(x0,y),6,'se_control')
         self.gui.add_text('main_vol.text','',40,(127,127,127), (x1,y), 5,'se_control')
         self.gui.add_button('main_vol.plus', self.img_dict['plus'], (x2,y),4,'se_control')
+        y -= 40
+        self.gui.add_button('pitch_adj.minus',self.img_dict['minus'],(x0,y),6,'se_control')
+        self.gui.add_text('pitch_adj.text','',40,(127,127,127), (x1,y), 5,'se_control')
+        self.gui.add_button('pitch_adj.plus', self.img_dict['plus'], (x2,y),4,'se_control')
 
     def on_midi_update(self):
         self.track_data = self.runtime.midi_data['track_list'][0]

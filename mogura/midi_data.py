@@ -30,15 +30,15 @@ def track_to_data(track,ticks_per_beat):
     track_data['time_signature_list'] = track_to_time_signature_list(track)
     track_data['tempo_list'] = track_to_tempo_list(track,ticks_per_beat)
 
-    max_pitch = track_data['noteev_list']
-    max_pitch = map(lambda i:i['pitch'],max_pitch)
-    max_pitch = max(max_pitch)
-    track_data['max_pitch'] = max_pitch
+    pitch1 = track_data['noteev_list']
+    pitch1 = map(lambda i:i['pitch'],pitch1)
+    pitch1 = max(pitch1)
+    track_data['pitch1'] = pitch1
 
-    min_pitch = track_data['noteev_list']
-    min_pitch = map(lambda i:i['pitch'],min_pitch)
-    min_pitch = min(min_pitch)
-    track_data['min_pitch'] = min_pitch
+    pitch0 = track_data['noteev_list']
+    pitch0 = map(lambda i:i['pitch'],pitch0)
+    pitch0 = min(pitch0)
+    track_data['pitch0'] = pitch0
 
     tick1 = track_to_end_tick(track)
     if tick1 is None:
@@ -461,8 +461,8 @@ def merge_track_data(src_track_data_list, tick_list):
     #print(f'TVNNIFCPIK out_tempo_list={out_tempo_list}')
     output_track_data['tempo_list'] = out_tempo_list
 
-    output_track_data['max_pitch'] = max(map(lambda i:i['max_pitch'],src_track_data_list))
-    output_track_data['min_pitch'] = min(map(lambda i:i['min_pitch'],src_track_data_list))
+    output_track_data['pitch1'] = max(map(lambda i:i['pitch1'],src_track_data_list))
+    output_track_data['pitch0'] = min(map(lambda i:i['pitch0'],src_track_data_list))
     
     return output_track_data
 

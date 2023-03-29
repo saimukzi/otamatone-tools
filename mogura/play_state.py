@@ -111,8 +111,8 @@ class PlayState(note_state.NoteState):
 #        tempo_list[0]['sec6tpb1'] = play_sec6tpb_list[3] - play_sec6tpb_list[0]
 #        self.track_data['tempo_list'] = tempo_list
 #
-#        self.track_data['max_pitch'] = src_track_data['max_pitch']
-#        self.track_data['min_pitch'] = src_track_data['min_pitch']
+#        self.track_data['pitch1'] = src_track_data['pitch1']
+#        self.track_data['pitch0'] = src_track_data['pitch0']
 #        
 #        self.track_data['sec6tpb'] = play_sec6tpb_list[3]-play_sec6tpb_list[0]
 #
