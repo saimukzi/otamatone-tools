@@ -6,7 +6,7 @@ import pygame
 import note_state
 from PIL import Image, ImageDraw
 
-PITCH_A4 = 69
+PITCH_A4 = note_state.PITCH_A4
 
 class EditState(note_state.NoteState):
 
@@ -123,16 +123,16 @@ class EditState(note_state.NoteState):
         if self.gui.is_btn_active('dpitch.minus'):
             self.runtime.dpitch -= 4 if is_shift_down else 1
             self.runtime.dpitch = min(max(
-                -self.runtime.midi_data['track_list'][0]['pitch0'],
+                -self.runtime.midi_data['track_list'][0]['opitch0'],
                 self.runtime.dpitch),
-                127-self.runtime.midi_data['track_list'][0]['pitch1']
+                127-self.runtime.midi_data['track_list'][0]['opitch1']
             )
         if self.gui.is_btn_active('dpitch.plus'):
             self.runtime.dpitch += 4 if is_shift_down else 1
             self.runtime.dpitch = min(max(
-                -self.runtime.midi_data['track_list'][0]['pitch0'],
+                -self.runtime.midi_data['track_list'][0]['opitch0'],
                 self.runtime.dpitch),
-                127-self.runtime.midi_data['track_list'][0]['pitch1']
+                127-self.runtime.midi_data['track_list'][0]['opitch1']
             )
 
 #    def is_ctrl_down(self, event):

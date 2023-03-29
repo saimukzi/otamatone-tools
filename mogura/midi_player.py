@@ -107,11 +107,11 @@ class MidiPlayer:
                 volume = self.channel_to_volume_dict[channel]
                 if (not c15_only) or (channel==15):
                     #print(noteev)
-                    self.midiout.send_message([0x90+channel, noteev['pitch'] , volume])
+                    self.midiout.send_message([0x90+channel, noteev['ppitch'] , volume])
             if noteev['type'] == 'off':
                 channel = noteev['channel']
                 #print(noteev)
-                self.midiout.send_message([0x80+channel, noteev['pitch'] , 0])
+                self.midiout.send_message([0x80+channel, noteev['ppitch'] , 0])
             self.noteev_done += 1
             if self.noteev_done >= len(self.noteev_list):
                 self.noteev_done -= len(self.noteev_list)

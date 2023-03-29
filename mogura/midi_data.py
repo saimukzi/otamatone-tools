@@ -30,15 +30,15 @@ def track_to_data(track,ticks_per_beat):
     track_data['time_signature_list'] = track_to_time_signature_list(track)
     track_data['tempo_list'] = track_to_tempo_list(track,ticks_per_beat)
 
-    pitch1 = track_data['noteev_list']
-    pitch1 = map(lambda i:i['pitch'],pitch1)
-    pitch1 = max(pitch1)
-    track_data['pitch1'] = pitch1
+    opitch1 = track_data['noteev_list']
+    opitch1 = map(lambda i:i['opitch'],opitch1)
+    opitch1 = max(opitch1)
+    track_data['opitch1'] = opitch1
 
-    pitch0 = track_data['noteev_list']
-    pitch0 = map(lambda i:i['pitch'],pitch0)
-    pitch0 = min(pitch0)
-    track_data['pitch0'] = pitch0
+    opitch0 = track_data['noteev_list']
+    opitch0 = map(lambda i:i['opitch'],opitch0)
+    opitch0 = min(opitch0)
+    track_data['opitch0'] = opitch0
 
     tick1 = track_to_end_tick(track)
     if tick1 is None:
@@ -56,20 +56,22 @@ def track_to_noteev_list(track):
         tick += msg.time
         if msg.type == 'note_on' and msg.velocity > 0:
             noteev = {
+                'usage':'OTM',
                 'tick':tick,
                 'type':'on',
                 'channel':0,
-                'pitch':msg.note,
+                'opitch':msg.note,
                 'tick0':tick,
             }
             noteev = (tick,1,msg.channel,msg.note,noteev)
             ret_noteev_list.append(noteev)
         elif msg.type == 'note_off' or msg.type == 'note_on':
             noteev = {
+                'usage':'OTM',
                 'tick':tick,
                 'type':'off',
                 'channel':0,
-                'pitch':msg.note,
+                'opitch':msg.note,
             }
             noteev = (tick,0,msg.channel,msg.note,noteev)
             ret_noteev_list.append(noteev)
@@ -83,10 +85,10 @@ def track_to_noteev_list(track):
     for noteev in ret_noteev_list:
         #print(noteev)
         if noteev['type'] == 'on':
-            cp = (noteev['channel'],noteev['pitch'])
+            cp = (noteev['channel'],noteev['opitch'])
             cp_to_noteev_dict[cp] = noteev
         elif noteev['type'] == 'off':
-            cp = (noteev['channel'],noteev['pitch'])
+            cp = (noteev['channel'],noteev['opitch'])
             noteev0 = cp_to_noteev_dict[cp]
             noteev0['tick1'] = noteev['tick']
             del cp_to_noteev_dict[cp]
@@ -279,11 +281,14 @@ def _track_data_chop_time_noteev_filter(start_tick, end_tick):
 def _on_noteev_to_off_noteev(noteev):
     #print(f'noteev={noteev}')
     ret_data = {
+        'usage':noteev['usage'],
         'tick':noteev['tick1'],
         'type':'off',
         'channel':noteev['channel'],
-        'pitch':noteev['pitch'],
+        'opitch':noteev['opitch'],
     }
+    if 'ppitch' in noteev:
+        ret_data['ppitch'] = noteev['ppitch']
     return ret_data
 
 def _noteev_sort_key(noteev):
@@ -292,7 +297,7 @@ def _noteev_sort_key(noteev):
         noteev['tick'],
         TYPE_TO_IDX[noteev['type']],
         noteev['channel'],
-        noteev['pitch'],
+        noteev['opitch'],
     )
 
 def _tempo_sort_key(tempo):
@@ -385,18 +390,18 @@ def merge_track_data(src_track_data_list, tick_list):
 
     noteev_list = itertools.chain(*list(map(lambda i:i['noteev_list'],src_track_data_list)))
     noteev_list = sorted(noteev_list, key=_noteev_sort_key)
-    on_channel_pitch_set = set()
+    on_channel_opitch_set = set()
     #print(json.dumps(noteev_list,indent=2))
     for noteev in noteev_list:
         #print(f'BYFKBGRYBS noteev={noteev}')
-        channel_pitch = (noteev['channel'], noteev['pitch'])
+        channel_opitch = (noteev['channel'], noteev['opitch'])
         if noteev['type'] == 'on':
-            if channel_pitch in on_channel_pitch_set:
+            if channel_opitch in on_channel_opitch_set:
                 assert(False)
-            on_channel_pitch_set.add(channel_pitch)
+            on_channel_opitch_set.add(channel_opitch)
         elif noteev['type'] == 'off':
-            assert(channel_pitch in on_channel_pitch_set)
-            on_channel_pitch_set.remove(channel_pitch)
+            assert(channel_opitch in on_channel_opitch_set)
+            on_channel_opitch_set.remove(channel_opitch)
         else:
             assert(False)
     output_track_data['noteev_list'] = noteev_list
@@ -461,9 +466,13 @@ def merge_track_data(src_track_data_list, tick_list):
     #print(f'TVNNIFCPIK out_tempo_list={out_tempo_list}')
     output_track_data['tempo_list'] = out_tempo_list
 
-    output_track_data['pitch1'] = max(map(lambda i:i['pitch1'],src_track_data_list))
-    output_track_data['pitch0'] = min(map(lambda i:i['pitch0'],src_track_data_list))
-    
+    output_track_data['opitch1'] = max(map(lambda i:i['opitch1'],src_track_data_list))
+    output_track_data['opitch0'] = min(map(lambda i:i['opitch0'],src_track_data_list))
+
+    if 'ppitch1' in src_track_data_list[0]:
+        output_track_data['ppitch1'] = max(map(lambda i:i['ppitch1'],src_track_data_list))
+        output_track_data['ppitch0'] = min(map(lambda i:i['ppitch0'],src_track_data_list))
+
     return output_track_data
 
 # # time_multiplier: >1: slower, <1: faster
@@ -523,11 +532,13 @@ def track_data_add_woodblock(track_data, start_tick, end_tick):
         tick0 = i
         tick1 = i+tpb//2
         on_noteev_list.append({
+            'usage':'BEAT',
             'tick':tick0,
             'tick0':tick0,
             'tick1':tick1,
             'type':'on',
-            'pitch':pitch,
+            'opitch':pitch,
+            'ppitch':pitch,
             'channel':15,
         })
         if i >= bar: bar=next(bar_itr)
@@ -623,3 +634,10 @@ def _check_tempo_list(tempo_list):
         tick = tempo['tick1']-tempo['tick0']
     for i in range(len(tempo_list)-1):
         assert(tempo_list[i]['tick1']==tempo_list[i+1]['tick0'])
+
+def track_data_cal_ppitch(track_data, dpitch):
+    for noteev in track_data['noteev_list']:
+        if noteev['usage'] == 'BEAT': continue
+        noteev['ppitch'] = noteev['opitch'] + dpitch
+    track_data['ppitch0'] = track_data['opitch0'] + dpitch
+    track_data['ppitch1'] = track_data['opitch1'] + dpitch

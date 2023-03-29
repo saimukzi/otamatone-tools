@@ -87,12 +87,14 @@ class Runtime:
             self.state_pool.event_tick(event, sec)
 
     def open_file(self, file_path):
+        self.dpitch = 0
         self.midi_data = midi_data.path_to_data(file_path)
         self.play_beat_list[0] = 0
         self.play_beat_list[1] = 0
         self.play_beat_list[2] = self.midi_data['track_list'][0]['tick1'] // self.midi_data['ticks_per_beat']
         self.play_beat_list[3] = self.play_beat_list[2]
         self.state_pool.set_active('EDIT')
+        midi_data.track_data_cal_ppitch(self.midi_data['track_list'][0], self.dpitch)
         self.state_pool.on_midi_update()
 
     def time_multiplier(self):
