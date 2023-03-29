@@ -1,7 +1,6 @@
-import common
 import gui
 import img
-import math
+import midi_data
 import pygame
 import note_state
 from PIL import Image, ImageDraw
@@ -127,6 +126,8 @@ class EditState(note_state.NoteState):
                 self.runtime.dpitch),
                 127-self.runtime.midi_data['track_list'][0]['opitch1']
             )
+            midi_data.track_data_cal_ppitch(self.runtime.midi_data['track_list'][0], self.runtime.dpitch)
+            self.runtime.state_pool.on_pitch_update()
         if self.gui.is_btn_active('dpitch.plus'):
             self.runtime.dpitch += 4 if is_shift_down else 1
             self.runtime.dpitch = min(max(
@@ -134,6 +135,8 @@ class EditState(note_state.NoteState):
                 self.runtime.dpitch),
                 127-self.runtime.midi_data['track_list'][0]['opitch1']
             )
+            midi_data.track_data_cal_ppitch(self.runtime.midi_data['track_list'][0], self.runtime.dpitch)
+            self.runtime.state_pool.on_pitch_update()
 
 #    def is_ctrl_down(self, event):
 #        return self.rctrl_down or self.lctrl_down
@@ -181,6 +184,10 @@ class EditState(note_state.NoteState):
         self.track_data = self.runtime.midi_data['track_list'][0]
         super().on_midi_update()
         self.vision_offset_y = 0
+
+    def on_pitch_update(self):
+        self.track_data = self.runtime.midi_data['track_list'][0]
+        super().on_pitch_update()
 
     def y_to_beat(self,y):
         ret = self.y_to_tick(y, self.vision_offset_y)

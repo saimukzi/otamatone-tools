@@ -132,6 +132,9 @@ class NoteState(null_state.NullState):
     def on_midi_update(self):
         self.update_ui_matrice()
 
+    def on_pitch_update(self):
+        self.update_ui_matrice()
+
     def update_ui_matrice(self):
         screen_size = pygame.display.get_window_size()
         midi_data = self.runtime.midi_data

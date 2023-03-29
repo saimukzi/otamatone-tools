@@ -23,3 +23,6 @@ class NullState:
 
     def on_midi_update(self):
         pass
+
+    def on_pitch_update(self):
+        pass
