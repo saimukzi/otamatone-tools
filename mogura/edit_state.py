@@ -5,7 +5,7 @@ import pygame
 import note_state
 from PIL import Image, ImageDraw
 
-PITCH_A4 = note_state.PITCH_A4
+PITCH_C4 = note_state.PITCH_C4
 
 class EditState(note_state.NoteState):
 

@@ -6,7 +6,7 @@ import pygame
 import null_state
 from PIL import Image, ImageDraw
 
-PITCH_A4 = 69
+PITCH_C4 = 72
 
 class NoteState(null_state.NullState):
 
@@ -58,7 +58,7 @@ class NoteState(null_state.NullState):
             y0 = round(noteev['y0']-vision_offset_y+self.matric_y0)
             y0 = max(y0,0)
             y1 = round(noteev['y1']-vision_offset_y+self.matric_y0)
-            cc = (ppitch+4+300-PITCH_A4)%12
+            cc = (ppitch+4+300-PITCH_C4)%12
             cc = CC[cc]
             screen.fill(
                 rect=(x0,y0,x1-x0,y1-y0),
@@ -110,7 +110,7 @@ class NoteState(null_state.NullState):
             ppitch = noteev['ppitch']
             x = self.ppitch_to_x(noteev['ppitch'])
             y0 = round(noteev['y0']-vision_offset_y+self.matric_y0)
-            p = (ppitch + 300 - PITCH_A4) % 4
+            p = (ppitch + 300 - PITCH_C4) % 4
             if p in self.matric_note_img_data_dict:
                 matric_note_img_data = self.matric_note_img_data_dict[p]
                 screen.blit(
@@ -162,18 +162,18 @@ class NoteState(null_state.NullState):
         while ppitch < self.matric_ppitch1:
             ppitch1 = ppitch
             ppitch1 += 300
-            ppitch1 -= PITCH_A4
+            ppitch1 -= PITCH_C4
             ppitch1 //= 4
             ppitch1 += 1
             ppitch1 *= 4
-            ppitch1 += PITCH_A4
+            ppitch1 += PITCH_C4
             ppitch1 -= 300
             ppitch1 = min(ppitch1,self.matric_ppitch1)
             x1 = self.matric_note_rail_x0 + (self.matric_ppitch1-ppitch )*self.matric_cell_width // 4
             x0 = self.matric_note_rail_x0 + (self.matric_ppitch1-ppitch1)*self.matric_cell_width // 4
             c = ppitch
             c += 300
-            c -= PITCH_A4
+            c -= PITCH_C4
             c %= 12
             c //= 4
             c = (255,246,246) if c == 0 else \
@@ -188,16 +188,16 @@ class NoteState(null_state.NullState):
         self.matric_note_rail_ppitch_line_data_list = []
         ppitch = self.matric_ppitch0
         ppitch += 300
-        ppitch -= PITCH_A4
+        ppitch -= PITCH_C4
         ppitch /= 4
         ppitch = math.ceil(ppitch)
         ppitch *= 4
-        ppitch += PITCH_A4
+        ppitch += PITCH_C4
         ppitch -= 300
         while ppitch <= self.matric_ppitch1:
             p = ppitch
             p += 300
-            p -= PITCH_A4
+            p -= PITCH_C4
             p %= 12
             c,w = (128,self.matric_line1_width) if p == 0 else (192,self.matric_line0_width)
             x = self.ppitch_to_x(ppitch)
