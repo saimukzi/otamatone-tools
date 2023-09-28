@@ -11,10 +11,21 @@ class Gui:
         self.layer_to_ek_set_dict = {}
         self.active_ek_set = set()
 
+    def add_click(self, ek, xy, size, anchor, layer):
+        rect_xy = common.anchor(xy, size, anchor)
+        self._add({
+            'type':'click',
+            'clickable':True,
+            'rect':rect_xy+size,
+            'layer':layer,
+            'ek':ek,
+        })
+
     def add_button(self, ek, img, xy, anchor, layer):
         blit_xy = common.anchor(xy, img.get_size(), anchor)
         self._add({
             'type':'button',
+            'clickable':True,
             'blit_kargs':{
                 'source': img,
                 'dest': blit_xy,
@@ -27,6 +38,7 @@ class Gui:
     def add_text(self, ek, text, size, color, xy, anchor, layer):
         self._add({
             'type':'TEXT',
+            'clickable':False,
             'draw_kargs':{
                 'text': text,
                 'size': size,
@@ -71,7 +83,7 @@ class Gui:
     def on_event(self,event):
         if event.type == pygame.MOUSEBUTTONDOWN:
             ek_list = self.ek_to_em_dict.values()
-            ek_list = filter(lambda i:i['type']=='button', ek_list)
+            ek_list = filter(lambda i:i['clickable'], ek_list)
             ek_list = filter(in_rect_func(event.pos), ek_list)
             ek_list = map(lambda i:i['ek'], ek_list)
             ek_list = set(ek_list)

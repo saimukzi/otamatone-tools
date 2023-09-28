@@ -137,6 +137,8 @@ class EditState(note_state.NoteState):
             )
             midi_data.track_data_cal_ppitch(self.runtime.midi_data['track_list'][0], self.runtime.dpitch)
             self.runtime.state_pool.on_pitch_update()
+        if self.gui.is_btn_active('audio_input.open_ui'):
+            print('audio_input.open_ui')
 
 #    def is_ctrl_down(self, event):
 #        return self.rctrl_down or self.lctrl_down
@@ -179,6 +181,9 @@ class EditState(note_state.NoteState):
         self.gui.add_button('dpitch.minus',self.img_dict['minus'],(x0,y),6,'se_control')
         self.gui.add_text('dpitch.text','',40,(127,127,127), (x1,y), 5,'se_control')
         self.gui.add_button('dpitch.plus', self.img_dict['plus'], (x2,y),4,'se_control')
+        y -= 40
+        self.gui.add_text('audio_input.text','',40,(127,127,127), (x1,y), 5,'se_control')
+        self.gui.add_click('audio_input.open_ui', (x1,y), (240,40), 5,'se_control')
 
     def on_midi_update(self):
         self.track_data = self.runtime.midi_data['track_list'][0]

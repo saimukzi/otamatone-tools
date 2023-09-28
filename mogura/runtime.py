@@ -1,3 +1,4 @@
+import audio_input
 import edit_state
 import edit_state
 import freq_timer
@@ -20,6 +21,7 @@ class Runtime:
         self.running = None
         self.timer_pool = timer_pool.TimerPool()
         self.state_pool = state_pool.StatePool()
+        self.audio_input = audio_input.AudioInput(self)
         self.screen_size = None
 
         self.ui_zoom_level = 12

@@ -5,7 +5,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 python3 -m venv venv
 venv\Scripts\Activate.ps1
-pip install --upgrade pip wheel
-pip install mido pillow python-rtmidi pygame
+python -m pip install --upgrade pip wheel
+python -m pip install --upgrade mido numpy pillow pyaudio python-rtmidi pygame
 
 python otm_mogura.py
