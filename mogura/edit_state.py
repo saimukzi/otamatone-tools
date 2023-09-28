@@ -138,7 +138,8 @@ class EditState(note_state.NoteState):
             midi_data.track_data_cal_ppitch(self.runtime.midi_data['track_list'][0], self.runtime.dpitch)
             self.runtime.state_pool.on_pitch_update()
         if self.gui.is_btn_active('audio_input.open_ui'):
-            print('audio_input.open_ui')
+            # print('audio_input.open_ui')
+            self.runtime.state_pool.set_active('AUDIO_INPUT_CONFIG')
 
 #    def is_ctrl_down(self, event):
 #        return self.rctrl_down or self.lctrl_down

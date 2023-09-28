@@ -7,9 +7,9 @@ import collections
 
 # RATE = 16000
 # CHUNK = int(RATE / 10)  # 100ms
-RATE_LIST = [
-    16000,32000,44100,48000,88200,96000,176400,192000
-]
+# RATE_LIST = [
+#     16000,32000,44100,48000,88200,96000,176400,192000
+# ]
 
 class AudioInput(object):
 
@@ -40,10 +40,10 @@ class AudioInput(object):
         self._audio_stream = self._audio_interface.open(
             format=pyaudio.paInt16,
             channels=1,
-            rate=info['rate'],
+            rate=info['defaultSampleRate'],
             input=True,
             input_device_index = info['index'],
-            frames_per_buffer=info['rate']//10,
+            frames_per_buffer=info['defaultSampleRate']//10,
             stream_callback=self._stream_callback,
         )
 
@@ -91,22 +91,20 @@ def _get_audio_input_device_list(audio_interface):
     for i in range(audio_interface.get_device_count()):
         info = audio_interface.get_device_info_by_index(i)
         if info['maxInputChannels'] <= 0: continue
-        for rate in RATE_LIST:
-            info0 = copy.deepcopy(info)
-            del info0['index']
-            info0['rate'] = rate
-            try:
-                if not audio_interface.is_format_supported(
-                    rate=rate,
-                    input_device=info['index'],
-                    input_channels=1,
-                    input_format=pyaudio.paInt16,
-                ):
-                    continue
-            except:
+        info0 = copy.deepcopy(info)
+        del info0['index']
+        try:
+            if not audio_interface.is_format_supported(
+                rate=info['defaultSampleRate'],
+                input_device=info['index'],
+                input_channels=1,
+                input_format=pyaudio.paInt16,
+            ):
                 continue
-            info0_json = json.dumps(info0, sort_keys=True)
-            info0_json_hash = hashlib.md5(info0_json.encode('utf-8')).hexdigest()
-            info0['hash'] = info0_json_hash
-            device_list.append(info0)
+        except:
+            continue
+        info0_json = json.dumps(info0, sort_keys=True)
+        info0_json_hash = hashlib.md5(info0_json.encode('utf-8')).hexdigest()
+        info0['hash'] = info0_json_hash
+        device_list.append(info0)
     return device_list

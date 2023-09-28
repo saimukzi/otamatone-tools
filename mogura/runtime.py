@@ -1,4 +1,5 @@
 import audio_input
+import audio_input_config_state
 import edit_state
 import edit_state
 import freq_timer
@@ -51,6 +52,7 @@ class Runtime:
         self.state_pool.add_state(null_state.NullState(self))
         self.state_pool.add_state(edit_state.EditState(self))
         self.state_pool.add_state(play_state.PlayState(self))
+        self.state_pool.add_state(audio_input_config_state.AudioInputConfigState(self))
         self.state_pool.set_active('NULL')
 
         if self.init_kargs['filename'] is not None:
