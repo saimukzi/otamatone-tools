@@ -557,12 +557,17 @@ def is_bar(tick, track_data):
     return ((tick-ts['tick0'])*ts['denominator']/tpb/4)%ts['numerator'] == 0
 
 def last_bar_tick(track_data):
+    #print(track_data)
     tpb  = track_data['ticks_per_beat']
     tick = track_data['noteev_list']
     tick = list(filter(lambda i:i['type']=='on',tick))[-1]['tick1']
-    ts = track_data['time_signature_list'][-1]
+    #ts = track_data['time_signature_list'][-1]
+    ts = list(filter(lambda i:(i['tick0']<=tick and i['tick1']>tick), track_data['time_signature_list']))[0]
     bar_tick = get_bar_tick(ts, tpb)
-    assert(tick>=ts['tick0'])
+    # assert(tick>=ts['tick0'])
+    if tick < ts['tick0']:
+        print(f"ASSERT XUJQUCFLFR: tick>=ts['tick0'], tick={tick}, ts['tick0']={ts['tick0']}")
+        assert(tick>=ts['tick0'])
     tick -= ts['tick_anchor']
     tick = math.ceil(tick/bar_tick)
     tick = tick*bar_tick

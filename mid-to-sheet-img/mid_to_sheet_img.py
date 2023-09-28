@@ -11,7 +11,7 @@ PHI = (1+5**0.5)/2
 #MIDI_CLOCK = 24
 #TIME_UNIT = MIDI_CLOCK*8
 
-PITCH_A4 = 69
+PITCH_C4 = 72
 LINE_PITCH_CNT = 4
 LINE_PITCH_CNT3 = LINE_PITCH_CNT*3
 
@@ -132,11 +132,11 @@ pitch_max = map(lambda i:i['pitch'], pitch_max)
 pitch_max = max(pitch_max)
 print(f'pitch_max={pitch_max}')
 
-#buffer_sheet_l_pitch = math.ceil((pitch_max+1-PITCH_A4)/LINE_PITCH_CNT)*LINE_PITCH_CNT+PITCH_A4
+#buffer_sheet_l_pitch = math.ceil((pitch_max+1-PITCH_C4)/LINE_PITCH_CNT)*LINE_PITCH_CNT+PITCH_C4
 #print(f'buffer_sheet_l_pitch={buffer_sheet_l_pitch}')
 buffer_sheet_l_pitch = pitch_max + 8
 
-#buffer_sheet_r_pitch = math.floor((pitch_min-1-PITCH_A4)/LINE_PITCH_CNT)*LINE_PITCH_CNT+PITCH_A4
+#buffer_sheet_r_pitch = math.floor((pitch_min-1-PITCH_C4)/LINE_PITCH_CNT)*LINE_PITCH_CNT+PITCH_C4
 #print(f'buffer_sheet_r_pitch={buffer_sheet_r_pitch}')
 buffer_sheet_r_pitch = pitch_min - 8
 
@@ -152,7 +152,7 @@ draw = ImageDraw.Draw(img)
 # draw color bg
 y0,y1 = 0,img_h
 for pitch in range(buffer_sheet_r_pitch, buffer_sheet_l_pitch+1):
-    p12 = ( pitch - PITCH_A4 + 300 ) % (LINE_PITCH_CNT3)
+    p12 = ( pitch - PITCH_C4 + 300 ) % (LINE_PITCH_CNT3)
     if p12 % LINE_PITCH_CNT != 0: continue
     x0 = (buffer_sheet_l_pitch-pitch-LINE_PITCH_CNT) * PX_UNIT / LINE_PITCH_CNT
     x1 = (buffer_sheet_l_pitch-pitch) * PX_UNIT / LINE_PITCH_CNT
@@ -167,7 +167,7 @@ for note in note_list:
     pitch = note['pitch']
     start = note['start']
     end   = note['end']
-    p4 = ( pitch - PITCH_A4 + 300 ) % (LINE_PITCH_CNT)
+    p4 = ( pitch - PITCH_C4 + 300 ) % (LINE_PITCH_CNT)
     x = (buffer_sheet_l_pitch-pitch) * PX_UNIT / LINE_PITCH_CNT
     x0 = x-PX_UNIT//4
     x1 = x+PX_UNIT//4
@@ -185,7 +185,7 @@ for t in range(0,math.ceil((time_max+1)/ticks_per_beat)*ticks_per_beat,ticks_per
 C0 = 128
 C1 = 192
 for pitch in range(buffer_sheet_r_pitch, buffer_sheet_l_pitch+1):
-    p = ( pitch - PITCH_A4 + 300 ) % (LINE_PITCH_CNT3)
+    p = ( pitch - PITCH_C4 + 300 ) % (LINE_PITCH_CNT3)
     if p % LINE_PITCH_CNT != 0: continue
     x = (buffer_sheet_l_pitch-pitch) * PX_UNIT / LINE_PITCH_CNT
     y0,y1 = 0,img_h
@@ -208,7 +208,7 @@ C = (0,0,0,255)
 for note in note_list:
     pitch = note['pitch']
     start = note['start']
-    p4 = ( pitch - PITCH_A4 + 300 ) % (LINE_PITCH_CNT)
+    p4 = ( pitch - PITCH_C4 + 300 ) % (LINE_PITCH_CNT)
     if p4 == 0:
         x = (buffer_sheet_l_pitch-pitch) * PX_UNIT / LINE_PITCH_CNT
         y = (start-time_min) * PX_UNIT // ticks_per_beat + BUFFER_Y_OFFSET
@@ -232,6 +232,7 @@ for note in note_list:
         p1 = (x-PX_UNIT_PHII2*2,y-PX_UNIT_PHII2)
         p2 = (x-PX_UNIT_PHII2*2,y+PX_UNIT_PHII2)
         draw.line((p0,p1,p2,p0),fill=(0,0,0,255),width=NOTE_LINE_SIZE)
+        l = NOTE_LINE_SIZE//2
         draw.ellipse((p0[0]-l,p0[1]-l,p0[0]+l,p0[1]+l),fill=C)
         draw.ellipse((p1[0]-l,p1[1]-l,p1[0]+l,p1[1]+l),fill=C)
         draw.ellipse((p2[0]-l,p2[1]-l,p2[0]+l,p2[1]+l),fill=C)
