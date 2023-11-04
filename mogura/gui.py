@@ -35,7 +35,7 @@ class Gui:
             'ek':ek,
         })
 
-    def add_text(self, ek, text, size, color, xy, anchor, layer):
+    def add_label(self, ek, text, size, color, xy, anchor, layer):
         self._add({
             'type':'TEXT',
             'clickable':False,

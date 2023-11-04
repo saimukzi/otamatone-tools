@@ -168,22 +168,22 @@ class EditState(note_state.NoteState):
         y = height-30
         self.gui = gui.Gui()
         self.gui.add_button('speed.minus',self.img_dict['minus'],(x0,y),6,'se_control')
-        self.gui.add_text('speed.text','',40,(127,127,127), (x1,y), 5,'se_control')
+        self.gui.add_label('speed.text','',40,(127,127,127), (x1,y), 5,'se_control')
         self.gui.add_button('speed.plus', self.img_dict['plus'], (x2,y),4,'se_control')
         y -= 40
         self.gui.add_button('beat_vol.minus',self.img_dict['minus'],(x0,y),6,'se_control')
-        self.gui.add_text('beat_vol.text','',40,(127,127,127), (x1,y), 5,'se_control')
+        self.gui.add_label('beat_vol.text','',40,(127,127,127), (x1,y), 5,'se_control')
         self.gui.add_button('beat_vol.plus', self.img_dict['plus'], (x2,y),4,'se_control')
         y -= 40
         self.gui.add_button('main_vol.minus',self.img_dict['minus'],(x0,y),6,'se_control')
-        self.gui.add_text('main_vol.text','',40,(127,127,127), (x1,y), 5,'se_control')
+        self.gui.add_label('main_vol.text','',40,(127,127,127), (x1,y), 5,'se_control')
         self.gui.add_button('main_vol.plus', self.img_dict['plus'], (x2,y),4,'se_control')
         y -= 40
         self.gui.add_button('dpitch.minus',self.img_dict['minus'],(x0,y),6,'se_control')
-        self.gui.add_text('dpitch.text','',40,(127,127,127), (x1,y), 5,'se_control')
+        self.gui.add_label('dpitch.text','',40,(127,127,127), (x1,y), 5,'se_control')
         self.gui.add_button('dpitch.plus', self.img_dict['plus'], (x2,y),4,'se_control')
         y -= 40
-        self.gui.add_text('audio_input.text','',40,(127,127,127), (x1,y), 5,'se_control')
+        self.gui.add_label('audio_input.text','',40,(127,127,127), (x1,y), 5,'se_control')
         self.gui.add_click('audio_input.open_ui', (x1,y), (240,40), 5,'se_control')
 
     def on_midi_update(self):
