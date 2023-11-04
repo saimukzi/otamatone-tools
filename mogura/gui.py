@@ -50,7 +50,7 @@ class Gui:
             'ek':ek,
         })
 
-    def set_text_text(self, ek, text):
+    def set_label_text(self, ek, text):
         self.ek_to_em_dict[ek]['draw_kargs']['text'] = text
 
     def _add(self, em):

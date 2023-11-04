@@ -55,10 +55,10 @@ class EditState(note_state.NoteState):
             color=(c11,c10,c10),
         )
         
-        self.gui.set_text_text('speed.text', f'speed={self.runtime.speed_level}')
-        self.gui.set_text_text('beat_vol.text', f'beat={self.runtime.beat_vol}')
-        self.gui.set_text_text('main_vol.text', f'main={self.runtime.main_vol}')
-        self.gui.set_text_text('dpitch.text', f'pitch={self.runtime.dpitch}')
+        self.gui.set_label_text('speed.text', f'speed={self.runtime.speed_level}')
+        self.gui.set_label_text('beat_vol.text', f'beat={self.runtime.beat_vol}')
+        self.gui.set_label_text('main_vol.text', f'main={self.runtime.main_vol}')
+        self.gui.set_label_text('dpitch.text', f'pitch={self.runtime.dpitch}')
         self.gui.draw_layer('se_control', screen, text_draw)
 
 
