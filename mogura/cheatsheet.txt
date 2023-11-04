@@ -1,9 +1,10 @@
-# use python3.10
-# python3.11 does not support python-rtmidi and pygame
+# use python3.11 from python.org
+# tested python3.11 from MS store and not working
+# python3.12 does not support pygame # https://pypi.org/project/pygame/
 
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
-python3 -m venv venv
+python -m venv venv
 venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip wheel
 python -m pip install --upgrade mido numpy pillow pyaudio python-rtmidi pygame
