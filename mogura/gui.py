@@ -70,7 +70,7 @@ class Gui:
             self.layer_to_ek_set_dict[_layer].remove(ek)
 
     def draw_layer(self, layer, surface, text_draw):
-        if layer not in self.layer_to_ek_set_dict: pass
+        if layer not in self.layer_to_ek_set_dict: return
         em_list = self.layer_to_ek_set_dict[layer]
         em_list = map(self.ek_to_em_dict.get, em_list)
         for em in em_list:

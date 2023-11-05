@@ -1,5 +1,8 @@
 import audio_input
-import audio_input_config_state
+import config_audio_input_device_state
+import config_audio_input_samplerate_state
+import config_audio_input_state
+import config_state
 import edit_state
 import edit_state
 import freq_timer
@@ -32,6 +35,10 @@ class Runtime:
 
         self.init_kargs = kargs
         
+        self.audio_input_enabled = False
+        self.audio_input_device_info = None
+        self.audio_input_sample_rate = 44100
+
         self.speed_level = self.init_kargs['speed']
         self.beat_vol = 127
         self.main_vol = 127
@@ -49,10 +56,13 @@ class Runtime:
         self.timer_pool.add_timer(freq_timer.FreqTimer(self, t0, FPS, lambda sec: self.screen_tick(sec)))
         self.timer_pool.add_timer(freq_timer.FreqTimer(self, t0+1/2/EPS, EPS, lambda sec: self.event_tick(sec)))
 
-        self.state_pool.add_state(null_state.NullState(self))
+        self.state_pool.add_state(config_audio_input_device_state.ConfigAudioInputDeviceState(self))
+        self.state_pool.add_state(config_audio_input_samplerate_state.ConfigAudioInputSampleRateState(self))
+        self.state_pool.add_state(config_audio_input_state.ConfigAudioInputState(self))
+        self.state_pool.add_state(config_state.ConfigState(self))
         self.state_pool.add_state(edit_state.EditState(self))
+        self.state_pool.add_state(null_state.NullState(self))
         self.state_pool.add_state(play_state.PlayState(self))
-        self.state_pool.add_state(audio_input_config_state.AudioInputConfigState(self))
         self.state_pool.set_active('NULL')
 
         if self.init_kargs['filename'] is not None:
