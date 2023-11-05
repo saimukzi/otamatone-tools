@@ -1,4 +1,5 @@
 import common
+import const
 import pygame
 
 TEXT_LIFE_TICK = 300
@@ -46,7 +47,11 @@ class TextDraw:
 
     def _get_font(self, size):
         if size not in self.size_to_font_data_dict:
-            font = pygame.font.SysFont(None, size)
+            # font_path = pygame.font.match_font('microsoftjhengheiui',bold=True)
+            # print(font_path)
+            font_path = const.FONT_PATH
+            font = pygame.font.Font(font_path, size)
+            # font = pygame.font.SysFont(None, size)
             data = {
                 'font': font,
             }

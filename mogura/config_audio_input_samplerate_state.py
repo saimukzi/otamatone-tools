@@ -1,3 +1,4 @@
+import const
 import gui
 import null_state
 import pygame
@@ -16,7 +17,14 @@ class ConfigAudioInputSampleRateState(null_state.NullState):
         self.gui.draw_layer('back', screen, text_draw)
 
     def event_tick(self, event, sec):
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            self.runtime.state_pool.set_active('CONFIG_AUDIO_INPUT')
+
         self.gui.on_event(event)
+        for sample_rate in SAMPLE_RATE_LIST:
+            if self.gui.is_btn_active(f'audio_input_samplerate.{sample_rate}.click'):
+                self.runtime.config['audio_input_sample_rate'] = sample_rate
+                self.runtime.state_pool.set_active('CONFIG_AUDIO_INPUT')
         if self.gui.is_btn_active('back.click'):
             self.runtime.state_pool.set_active('CONFIG_AUDIO_INPUT')
 
@@ -36,11 +44,12 @@ class ConfigAudioInputSampleRateState(null_state.NullState):
 
         x = 10
         y = 10
-        # self.gui.add_label('audio_input_device.text','',40,(127,127,127), (x,y), 7,'options')
-        # self.gui.add_click('audio_input_device.click', (x,y), (240,40), 7, 'options')
-        # y += 40
+        for sample_rate in SAMPLE_RATE_LIST:
+            self.gui.add_label(f'audio_input_samplerate.{sample_rate}.text',str(sample_rate),const.FONT_SIZE,(127,127,127), (x,y), 7,'options')
+            self.gui.add_click(f'audio_input_samplerate.{sample_rate}.click', (x,y), (240,40), 7, 'options')
+            y += 40
 
         x = width-10
         y = height-10
-        self.gui.add_label('back.text','Back',40,(127,127,127), (x,y), 3,'back')
+        self.gui.add_label('back.text','Back',const.FONT_SIZE,(127,127,127), (x,y), 3,'back')
         self.gui.add_click('back.click', (x,y), (240,40), 3, 'back')

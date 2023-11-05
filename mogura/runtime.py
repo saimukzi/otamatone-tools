@@ -35,9 +35,11 @@ class Runtime:
 
         self.init_kargs = kargs
         
-        self.audio_input_enabled = False
-        self.audio_input_device_info = None
-        self.audio_input_sample_rate = 44100
+        self.config = {
+            'audio_input_enabled': False,
+            'audio_input_device_info': None,
+            'audio_input_sample_rate': 44100,
+        }
 
         self.speed_level = self.init_kargs['speed']
         self.beat_vol = 127

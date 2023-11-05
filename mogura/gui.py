@@ -13,17 +13,19 @@ class Gui:
 
     def add_click(self, ek, xy, size, anchor, layer):
         rect_xy = common.anchor(xy, size, anchor)
-        self._add({
+        ret = {
             'type':'click',
             'clickable':True,
             'rect':rect_xy+size,
             'layer':layer,
             'ek':ek,
-        })
+        }
+        self._add(ret)
+        return ret
 
     def add_button(self, ek, img, xy, anchor, layer):
         blit_xy = common.anchor(xy, img.get_size(), anchor)
-        self._add({
+        ret = {
             'type':'button',
             'clickable':True,
             'blit_kargs':{
@@ -33,10 +35,12 @@ class Gui:
             'rect':blit_xy+img.get_size(),
             'layer':layer,
             'ek':ek,
-        })
+        }
+        self._add(ret)
+        return ret
 
     def add_label(self, ek, text, size, color, xy, anchor, layer):
-        self._add({
+        ret = {
             'type':'TEXT',
             'clickable':False,
             'draw_kargs':{
@@ -48,7 +52,9 @@ class Gui:
             },
             'layer':layer,
             'ek':ek,
-        })
+        }
+        self._add(ret)
+        return ret
 
     def set_label_text(self, ek, text):
         self.ek_to_em_dict[ek]['draw_kargs']['text'] = text
@@ -61,6 +67,9 @@ class Gui:
         if layer not in self.layer_to_ek_set_dict:
             self.layer_to_ek_set_dict[layer] = set()
         self.layer_to_ek_set_dict[layer].add(ek)
+
+    def get(self, ek):
+        return self.ek_to_em_dict[ek]
 
     def rm(self, ek):
         if ek in self.ek_to_em_dict:
@@ -81,7 +90,7 @@ class Gui:
                 text_draw.draw(surface=surface, **em['draw_kargs'])
 
     def on_event(self,event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        if (event.type == pygame.MOUSEBUTTONDOWN) and (event.button == 1):
             ek_list = self.ek_to_em_dict.values()
             ek_list = filter(lambda i:i['clickable'], ek_list)
             ek_list = filter(in_rect_func(event.pos), ek_list)
