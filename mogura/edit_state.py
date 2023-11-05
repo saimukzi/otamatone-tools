@@ -183,7 +183,7 @@ class EditState(note_state.NoteState):
         self.gui.add_label('dpitch.text','',40,(127,127,127), (x1,y), 5,'se_control')
         self.gui.add_button('dpitch.plus', self.img_dict['plus'], (x2,y),4,'se_control')
         y -= 40
-        self.gui.add_label('audio_input.text','',40,(127,127,127), (x1,y), 5,'se_control')
+        self.gui.add_label('audio_input.text','Config',40,(127,127,127), (x1,y), 5,'se_control')
         self.gui.add_click('audio_input.open_ui', (x1,y), (240,40), 5,'se_control')
 
     def on_midi_update(self):
