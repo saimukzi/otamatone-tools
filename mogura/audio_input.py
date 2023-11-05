@@ -91,8 +91,6 @@ def _get_audio_input_device_list(audio_interface):
     for i in range(audio_interface.get_device_count()):
         info = audio_interface.get_device_info_by_index(i)
         if info['maxInputChannels'] <= 0: continue
-        info0 = copy.deepcopy(info)
-        del info0['index']
         try:
             if not audio_interface.is_format_supported(
                 rate=info['defaultSampleRate'],
@@ -103,6 +101,8 @@ def _get_audio_input_device_list(audio_interface):
                 continue
         except:
             continue
+        info0 = copy.deepcopy(info)
+        del info0['index']
         info0_json = json.dumps(info0, sort_keys=True)
         info0_json_hash = hashlib.md5(info0_json.encode('utf-8')).hexdigest()
         info0['hash'] = info0_json_hash
