@@ -3,6 +3,7 @@ import hashlib
 import json
 import numpy as np
 import pyaudio
+import pyaudio_hack
 import collections
 
 # RATE = 16000
@@ -32,7 +33,7 @@ class AudioInput(object):
             print('No audio input device found')
             return False
         
-        self._audio_interface = pyaudio.PyAudio()
+        self._audio_interface = pyaudio_hack.PyAudioHack()
 
         info = audio_input_device_list[0]
         print(info)
@@ -81,7 +82,7 @@ class AudioInput(object):
     #     return int(in_data_np.max() - in_data_np.min())
 
 def get_audio_input_device_list():
-    audio_interface = pyaudio.PyAudio()
+    audio_interface = pyaudio_hack.PyAudioHack()
     ret = _get_audio_input_device_list(audio_interface)
     audio_interface.terminate()
     return ret
@@ -89,7 +90,7 @@ def get_audio_input_device_list():
 def _get_audio_input_device_list(audio_interface):
     device_list = []
     for i in range(audio_interface.get_device_count()):
-        info = audio_interface.get_device_info_by_index(i)
+        info = audio_interface.get_device_info_by_index_hack(i)
         if info['maxInputChannels'] <= 0: continue
         try:
             if not audio_interface.is_format_supported(
