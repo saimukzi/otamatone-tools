@@ -1,4 +1,5 @@
 import audio_input
+import concurrent
 import config_audio_input_device_state
 import config_audio_input_samplerate_state
 import config_audio_input_state
@@ -12,7 +13,9 @@ import null_state
 import play_state
 import pygame
 import state_pool
+import os
 import text_draw
+import threading
 import time
 import timer_pool
 
@@ -22,6 +25,9 @@ EPS = FPS * 10
 class Runtime:
 
     def __init__(self, **kargs):
+        self.thread_pool = concurrent.futures.ThreadPoolExecutor(min(32, os.cpu_count()+4))
+        self.lock = threading.Condition()
+
         self.running = None
         self.timer_pool = timer_pool.TimerPool()
         self.state_pool = state_pool.StatePool()
@@ -46,33 +52,43 @@ class Runtime:
         self.main_vol = 127
         self.dpitch = 0
 
+        self.exit_done = False
+
     def run(self):
-        pygame.init()
-    
-        self.screen = pygame.display.set_mode((1280,720),flags=pygame.RESIZABLE)
+        try:
+            pygame.init()
         
-        self.midi_player = midi_player.MidiPlayer()
-        
-        t0 = time.time()
-        self.timer_pool.add_timer(self.midi_player)
-        self.timer_pool.add_timer(freq_timer.FreqTimer(self, t0, FPS, lambda sec: self.screen_tick(sec)))
-        self.timer_pool.add_timer(freq_timer.FreqTimer(self, t0+1/2/EPS, EPS, lambda sec: self.event_tick(sec)))
+            self.screen = pygame.display.set_mode((1280,720),flags=pygame.RESIZABLE)
+            
+            self.midi_player = midi_player.MidiPlayer()
+            
+            t0 = time.time()
+            self.timer_pool.add_timer(self.midi_player)
+            self.timer_pool.add_timer(freq_timer.FreqTimer(self, t0, FPS, lambda sec: self.screen_tick(sec)))
+            self.timer_pool.add_timer(freq_timer.FreqTimer(self, t0+1/2/EPS, EPS, lambda sec: self.event_tick(sec)))
 
-        self.state_pool.add_state(config_audio_input_device_state.ConfigAudioInputDeviceState(self))
-        self.state_pool.add_state(config_audio_input_samplerate_state.ConfigAudioInputSampleRateState(self))
-        self.state_pool.add_state(config_audio_input_state.ConfigAudioInputState(self))
-        self.state_pool.add_state(config_state.ConfigState(self))
-        self.state_pool.add_state(edit_state.EditState(self))
-        self.state_pool.add_state(null_state.NullState(self))
-        self.state_pool.add_state(play_state.PlayState(self))
-        self.state_pool.set_active('NULL')
+            self.state_pool.add_state(config_audio_input_device_state.ConfigAudioInputDeviceState(self))
+            self.state_pool.add_state(config_audio_input_samplerate_state.ConfigAudioInputSampleRateState(self))
+            self.state_pool.add_state(config_audio_input_state.ConfigAudioInputState(self))
+            self.state_pool.add_state(config_state.ConfigState(self))
+            self.state_pool.add_state(edit_state.EditState(self))
+            self.state_pool.add_state(null_state.NullState(self))
+            self.state_pool.add_state(play_state.PlayState(self))
+            self.state_pool.set_active('NULL')
 
-        if self.init_kargs['filename'] is not None:
-            self.open_file(self.init_kargs['filename'])
+            if self.init_kargs['filename'] is not None:
+                self.open_file(self.init_kargs['filename'])
 
-        self.text_draw = text_draw.TextDraw()
+            self.text_draw = text_draw.TextDraw()
 
-        self.timer_pool.run()
+            self.timer_pool.run()
+
+            self.exit_done = True
+        except:
+            self.exit_done = True
+            raise
+        finally:
+            self.exit_done = True
 
     def screen_tick(self, sec):
         # print('screen_tick')

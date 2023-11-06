@@ -1,12 +1,22 @@
 # use python3.11 from python.org
 # tested python3.11 from MS store and not working
 # python3.12 does not support pygame # https://pypi.org/project/pygame/
+# python3.12 does not support cupy # https://pypi.org/project/cupy/
+
+# using CUDA 12.1
+# CUDA 12.2 + CuPy 12.2 are not supported
+#  - https://docs.cupy.dev/en/v12.2.0/install.html
+#  - https://github.com/cupy/cupy/issues/7776
+
+# numpy 1.24
+#  - https://docs.cupy.dev/en/v12.2.0/install.html
 
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 python -m venv venv
 venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip wheel
-python -m pip install --upgrade mido numpy pillow pyaudio python-rtmidi pygame
+python -m pip install --upgrade pip wheel setuptools
+python -m pip install --upgrade mido pillow pyaudio python-rtmidi pygame numpy<1.25
+python -m pip install --upgrade cupy-cuda12x
 
 python otm_mogura.py

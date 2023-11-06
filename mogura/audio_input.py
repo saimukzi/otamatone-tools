@@ -19,6 +19,7 @@ class AudioInput(object):
 
         self._audio_interface = None
         self._audio_stream = None
+        self.stream_callback_list = []
 
     def start(self):
         print('Starting audio listener...')
@@ -26,7 +27,7 @@ class AudioInput(object):
         assert(self._audio_interface is None)
 
         audio_input_device_list = get_audio_input_device_list()
-        audio_input_device_list = filter(lambda info: info['hash']==self.runtime.audio_input_device_hash, audio_input_device_list)
+        audio_input_device_list = filter(lambda info: info['hash']==self.runtime.config['audio_input_device_info']['hash'], audio_input_device_list)
         audio_input_device_list = list(audio_input_device_list)
 
         if len(audio_input_device_list) <= 0:
@@ -41,14 +42,14 @@ class AudioInput(object):
         self._audio_stream = self._audio_interface.open(
             format=pyaudio.paInt16,
             channels=1,
-            rate=info['defaultSampleRate'],
+            rate=self.runtime.config['audio_input_sample_rate'],
             input=True,
             input_device_index = info['index'],
-            frames_per_buffer=info['defaultSampleRate']//10,
+            frames_per_buffer=self.runtime.config['audio_input_sample_rate']//10,
             stream_callback=self._stream_callback,
         )
 
-        self.runtime.update_status('audio_input_device', info['name'])
+        # self.runtime.update_status('audio_input_device', info['name'])
 
         print('Audio listener started')
 
@@ -64,6 +65,9 @@ class AudioInput(object):
         #     self.runtime.translation_agent.on_audio_listener_stopped()
         print('Audio listener stopped')
 
+    def add_stream_callback(self, callback):
+        self.stream_callback_list.append(callback)
+
     def _stream_callback(self, in_data, frame_count, time_info, status_flags):
         # vol = self._cal_vol(in_data)
         # self._vol_history.append(vol)
@@ -74,6 +78,10 @@ class AudioInput(object):
         #     if self.runtime.translation_agent is not None:
         #         self.runtime.translation_agent.on_audio_listener_data(in_data)
         # return None, pyaudio.paContinue
+
+        for callback in self.stream_callback_list:
+            callback(in_data, frame_count, time_info, status_flags)
+
         return None, pyaudio.paContinue
 
     # def _cal_vol(self, in_data):
@@ -102,10 +110,14 @@ def _get_audio_input_device_list(audio_interface):
                 continue
         except:
             continue
+
         info0 = copy.deepcopy(info)
         del info0['index']
         info0_json = json.dumps(info0, sort_keys=True)
         info0_json_hash = hashlib.md5(info0_json.encode('utf-8')).hexdigest()
-        info0['hash'] = info0_json_hash
-        device_list.append(info0)
+
+        info1 = copy.deepcopy(info)
+        info1['hash'] = info0_json_hash
+        device_list.append(info1)
+
     return device_list

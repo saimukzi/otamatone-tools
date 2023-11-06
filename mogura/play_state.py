@@ -1,4 +1,8 @@
+import audio_input
+import common
+import const
 import copy
+import dft
 import midi_data
 import note_state
 import pygame
@@ -8,13 +12,21 @@ class PlayState(note_state.NoteState):
 
     def __init__(self,runtime):
         super().__init__(runtime)
+
         self.id = 'PLAY'
+
+        self.audio_input = audio_input.AudioInput(self.runtime)
+        self.dft = dft.Dft(self.runtime)
+        self.audio_input.add_stream_callback(self.dft.stream_callback)
+
         self.rctrl_down = False
         self.lctrl_down = False
         
         self.start_sec = None
         #self.track_list = None
         self.loop_sec6tpb = None
+
+        self.freq_list = None
 
     def screen_tick(self, screen, sec, **kwargs):
         super().screen_tick(screen=screen, sec=sec, **kwargs)
@@ -34,6 +46,20 @@ class PlayState(note_state.NoteState):
             rect=(0,self.matric_y0,self.matric_screen_size[0],1),
             color=(0,0,0),
         )
+
+        if self.freq_list is not None:
+            level_np = self.dft.get_level_np()
+            if level_np is not None:
+                # print(level_np.shape)
+                for i in range(level_np.shape[0]):
+                    v = level_np[i]
+                    v = v+10
+                    v = max(v,0)
+                    v *= 50
+                    screen.fill(
+                        rect=(self.freq_x0_list[i],0,self.freq_w_list[i],v),
+                        color=(0,0,0,255),
+                    )
         
     def on_active(self):
 #        src_track_data = self.runtime.midi_data['track_list'][0]
@@ -172,11 +198,52 @@ class PlayState(note_state.NoteState):
         self.runtime.midi_player.channel_to_volume_dict[15] = self.runtime.beat_vol
         self.runtime.midi_player.play(play_track_data['noteev_list'],self.loop_sec6tpb,play_track_data['ticks_per_beat'],self.start_sec-0.15,self.start_sec-2-0.15)
 
+        self.audio_input_enabled = self.runtime.config['audio_input_enabled']
+        if self.audio_input_enabled:
+            ppitch0x = (self.track_data['ppitch0']-2) * const.DFT_PITCH_SAMPLE_COUNT
+            ppitch1x = (self.track_data['ppitch1']+2) * const.DFT_PITCH_SAMPLE_COUNT
+            freq_list = range(ppitch0x, ppitch1x+1)
+            freq_list = reversed(freq_list)
+            freq_list = map(lambda i: i/const.DFT_PITCH_SAMPLE_COUNT, freq_list)
+            freq_list = map(lambda i: i-common.A4_PITCH, freq_list)
+            freq_list = map(lambda i: common.A4_FREQ*2**(i/12), freq_list)
+            freq_list = list(freq_list)
+            self.dft.start(self.runtime.config['audio_input_sample_rate'], self.runtime.config['audio_input_sample_rate']//10, freq_list)
+            self.audio_input.start()
+
+            self.ppitch0x = ppitch0x
+            self.ppitch1x = ppitch1x
+            self.freq_list = freq_list
+        else:
+            self.freq_list = None
+
         super().on_active()
 
     def on_inactive(self):
         self.runtime.midi_player.stop()
-        super().on_active()
+        self.dft.stop()
+        self.audio_input.stop()
+        super().on_inactive()
+
+    def update_ui_matrice(self):
+        super().update_ui_matrice()
+        if self.freq_list is not None:
+            self.freq_x0_list = []
+            self.freq_w_list = []
+            xx0 = self.matric_note_rail_x0
+            xx1 = self.matric_note_rail_x1
+            for f in range(len(self.freq_list)):
+                xxx0 = xx0 + (xx1-xx0)*(f-1)/len(self.freq_list)
+                xxx1 = xx0 + (xx1-xx0)*(f  )/len(self.freq_list)
+                xxx2 = xx0 + (xx1-xx0)*(f+1)/len(self.freq_list)
+                x0 = int((xxx0+xxx1)/2)
+                x1 = int((xxx1+xxx2)/2)
+                if x1 == x0: x1=x0+1
+                self.freq_x0_list.append(x0)
+                self.freq_w_list.append(x1-x0)
+        else:
+            self.freq_x0_list = None
+            self.freq_w_list = None
 
     def event_tick(self, event, sec):
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
