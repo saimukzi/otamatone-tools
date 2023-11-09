@@ -18,17 +18,44 @@ class NoteState(null_state.NullState):
 
 
     def draw_note_rail(self, screen, vision_offset_y):
+        draw_session = self.get_draw_session(screen, vision_offset_y)
+        self.draw_color_note_rail_bg(draw_session)
+        self.draw_note_length(draw_session)
+        self.draw_time_horizontal_line_thin(draw_session)
+        self.draw_note_rail_ppitch_line(draw_session)
+        self.draw_time_horizontal_line_thick(draw_session)
+        self.draw_note_signal(draw_session)
+
+    def get_draw_session(self, screen, vision_offset_y):
         track_data = self.matric_track_data
         ticks_per_beat = self.matric_ticks_per_beat
         min_tick = math.floor(self.y_to_tick(-self.matric_cell_width,vision_offset_y))
         max_tick = math.ceil(self.y_to_tick(self.matric_screen_size[1]+self.matric_cell_width,vision_offset_y))
-        
-        # color note rail bg
+
+        draw_session = {
+            'screen': screen,
+            'track_data': track_data,
+            'ticks_per_beat': ticks_per_beat,
+            'vision_offset_y': vision_offset_y,
+            'min_tick': min_tick,
+            'max_tick': max_tick,
+        }
+
+        return draw_session
+
+    def draw_color_note_rail_bg(self, draw_session):
+        screen = draw_session['screen']
         for matric_note_rail_bg_rect_data in self.matric_note_rail_bg_rect_data_list:
             #pygame.draw.rect(screen, matric_note_rail_bg_rect_data['color'], matric_note_rail_bg_rect_data['rect'])
             screen.fill(**matric_note_rail_bg_rect_data)
 
-        # draw note length
+    def draw_note_length(self, draw_session):
+        screen = draw_session['screen']
+        track_data = draw_session['track_data']
+        vision_offset_y = draw_session['vision_offset_y']
+        min_tick = draw_session['min_tick']
+        max_tick = draw_session['max_tick']
+
         noteev_list = track_data['noteev_list']
         noteev_list = filter(lambda i:i['type']=='on',noteev_list)
         noteev_list = filter(lambda i:i['tick1']>min_tick,noteev_list)
@@ -65,8 +92,13 @@ class NoteState(null_state.NullState):
                 color=cc,
             )
 
-        # time horizontal line (thin)
-        #bar_set = track_data['bar_set']
+    def draw_time_horizontal_line_thin(self, draw_session):
+        screen = draw_session['screen']
+        vision_offset_y = draw_session['vision_offset_y']
+        min_tick = draw_session['min_tick']
+        max_tick = draw_session['max_tick']
+        ticks_per_beat = draw_session['ticks_per_beat']
+
         y0 = -self.matric_line0_width//2
         y1 = -self.matric_line1_width//2
         w = self.matric_note_rail_x1-self.matric_note_rail_x0
@@ -79,14 +111,18 @@ class NoteState(null_state.NullState):
                 color=(255,255,255,255),
             )
 
-        # note rail ppitch line
+    def draw_note_rail_ppitch_line(self, draw_session):
+        screen = draw_session['screen']
         for matric_note_rail_ppitch_line_data in self.matric_note_rail_ppitch_line_data_list:
             screen.fill(**matric_note_rail_ppitch_line_data)
 
-        # time horizontal line (thick)
-#        bar_set = track_data['bar_set']
-#        bar_set = filter(lambda i:i>=min_tick//ticks_per_beat*ticks_per_beat,bar_set)
-#        bar_set = filter(lambda i:i< max_tick, bar_set)
+    def draw_time_horizontal_line_thick(self, draw_session):
+        screen = draw_session['screen']
+        track_data = draw_session['track_data']
+        vision_offset_y = draw_session['vision_offset_y']
+        min_tick = draw_session['min_tick']
+        max_tick = draw_session['max_tick']
+
         y0 = -self.matric_line0_width//2
         y1 = -self.matric_line1_width//2
         w = self.matric_note_rail_x1-self.matric_note_rail_x0
@@ -100,7 +136,13 @@ class NoteState(null_state.NullState):
                 color=(128,128,128,255),
             )
 
-        # draw note signal
+    def draw_note_signal(self, draw_session):
+        screen = draw_session['screen']
+        track_data = draw_session['track_data']
+        vision_offset_y = draw_session['vision_offset_y']
+        min_tick = draw_session['min_tick']
+        max_tick = draw_session['max_tick']
+
         noteev_list = track_data['noteev_list']
         noteev_list = filter(lambda i:i['type']=='on',noteev_list)
         noteev_list = filter(lambda i:i['tick1']>min_tick,noteev_list)
@@ -117,8 +159,6 @@ class NoteState(null_state.NullState):
                     source=matric_note_img_data['surface'],
                     dest=(x+matric_note_img_data['offset_x'],y0+matric_note_img_data['offset_y']),
                 )
-
-        # pygame.display.flip()
 
     def event_tick(self, event, sec):
         pass

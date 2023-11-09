@@ -2,6 +2,7 @@ import const
 import gui
 import null_state
 import pygame
+import user_data
 
 class ConfigState(null_state.NullState):
 
@@ -15,14 +16,17 @@ class ConfigState(null_state.NullState):
         self.gui.draw_layer('back', screen, text_draw)
 
     def event_tick(self, event, sec):
+        self.gui.on_event(event)
+
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            user_data.save_user_data(self.runtime.config)
+            self.runtime.state_pool.set_active('EDIT')
+        if self.gui.is_btn_active('back.click'):
+            user_data.save_user_data(self.runtime.config)
             self.runtime.state_pool.set_active('EDIT')
 
-        self.gui.on_event(event)
         if self.gui.is_btn_active('audio_input.click'):
             self.runtime.state_pool.set_active('CONFIG_AUDIO_INPUT')
-        if self.gui.is_btn_active('back.click'):
-            self.runtime.state_pool.set_active('EDIT')
 
     def on_active(self):
         self.update_ui_matrice()

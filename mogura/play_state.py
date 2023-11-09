@@ -40,12 +40,12 @@ class PlayState(note_state.NoteState):
         vision_offset_y = midi_data.sec6tpb_to_tick(vision_offset_y, self.track_data['tempo_list'], self.track_data['time_multiplier'])
         vision_offset_y /= self.matric_ticks_per_beat
         vision_offset_y *= self.matric_cell_width
-        self.draw_note_rail(screen, vision_offset_y)
+        # self.draw_note_rail(screen, vision_offset_y)
 
-        screen.fill(
-            rect=(0,self.matric_y0,self.matric_screen_size[0],1),
-            color=(0,0,0),
-        )
+        draw_session = self.get_draw_session(screen, vision_offset_y)
+
+        self.draw_color_note_rail_bg(draw_session)
+        self.draw_note_length(draw_session)
 
         if self.freq_list is not None:
             level_np = self.dft.get_level_np()
@@ -53,14 +53,24 @@ class PlayState(note_state.NoteState):
                 # print(level_np.shape)
                 for i in range(level_np.shape[0]):
                     v = level_np[i]
-                    v = v+10
+                    v = v+5
                     v = max(v,0)
                     v *= 50
                     screen.fill(
-                        rect=(self.freq_x0_list[i],0,self.freq_w_list[i],v),
-                        color=(0,0,0,255),
+                        rect=(self.freq_x0_list[i],self.matric_y0,self.freq_w_list[i],v),
+                        color=(63,63,63,255),
                     )
-        
+
+        self.draw_time_horizontal_line_thin(draw_session)
+        self.draw_note_rail_ppitch_line(draw_session)
+        self.draw_time_horizontal_line_thick(draw_session)
+        self.draw_note_signal(draw_session)
+
+        screen.fill(
+            rect=(0,self.matric_y0,self.matric_screen_size[0],1),
+            color=(0,0,0),
+        )
+
     def on_active(self):
 #        src_track_data = self.runtime.midi_data['track_list'][0]
 #        

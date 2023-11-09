@@ -10,14 +10,15 @@ import freq_timer
 import midi_data
 import midi_player
 import null_state
+import os
 import play_state
 import pygame
 import state_pool
-import os
 import text_draw
 import threading
 import time
 import timer_pool
+import user_data
 
 FPS = 60
 EPS = FPS * 10
@@ -41,11 +42,13 @@ class Runtime:
 
         self.init_kargs = kargs
         
-        self.config = {
-            'audio_input_enabled': False,
-            'audio_input_device_info': None,
-            'audio_input_sample_rate': 44100,
-        }
+        self.config = user_data.load_user_data()
+        if self.config is None:
+            self.config = {
+                'audio_input_enabled': False,
+                'audio_input_device_info': None,
+                'audio_input_sample_rate': 44100,
+            }
 
         self.speed_level = self.init_kargs['speed']
         self.beat_vol = 127
