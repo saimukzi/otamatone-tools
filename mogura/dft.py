@@ -1,12 +1,15 @@
 import copy
-import cupy as cp
 import math
 import numpy as np
-# import threading
 import queue
 import traceback
 
-xp = cp
+try:
+    import cupy as cp
+    xp = cp
+except:
+    cp = None
+    xp = np
 
 DECREASE_RATE = 0.5
 
