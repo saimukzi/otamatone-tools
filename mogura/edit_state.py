@@ -28,31 +28,31 @@ class EditState(note_state.NoteState):
         play_tick_itr = map(lambda i:i*ticks_per_beat,self.runtime.play_beat_list)
         play_y0_list  = list(map(lambda i:round(self.tick_to_y(i,self.vision_offset_y)),play_tick_itr))
 
-        x0 = self.matric_note_rail_x0 - self.matric_cell_width
-        x1 = self.matric_note_rail_x0 - self.matric_cell_width // 2
-        x2 = self.matric_note_rail_x1 + self.matric_cell_width // 2
-        x3 = self.matric_note_rail_x1 + self.matric_cell_width
-        y0 = - self.matric_line1_width // 2
+        x0 = self.matric_note_rail_pp_min - self.matric_cell_z
+        x1 = self.matric_note_rail_pp_min - self.matric_cell_z // 2
+        x2 = self.matric_note_rail_pp_max + self.matric_cell_z // 2
+        x3 = self.matric_note_rail_pp_max + self.matric_cell_z
+        y0 = - self.matric_line1_z // 2
         
         c00,c01=63,127
         c10,c11=127,191
         screen.fill(
-            rect=(x0,play_y0_list[0]+y0,x3-x0,self.matric_line1_width),
+            rect=(x0,play_y0_list[0]+y0,x3-x0,self.matric_line1_z),
             color=(c00,c01,c00),
         )
 
         screen.fill(
-            rect=(x1,play_y0_list[1]+y0,x2-x1,self.matric_line1_width),
+            rect=(x1,play_y0_list[1]+y0,x2-x1,self.matric_line1_z),
             color=(c10,c11,c10),
         )
 
         screen.fill(
-            rect=(x0,play_y0_list[3]+y0,x3-x0,self.matric_line1_width),
+            rect=(x0,play_y0_list[3]+y0,x3-x0,self.matric_line1_z),
             color=(c01,c00,c00),
         )
 
         screen.fill(
-            rect=(x1,play_y0_list[2]+y0,x2-x1,self.matric_line1_width),
+            rect=(x1,play_y0_list[2]+y0,x2-x1,self.matric_line1_z),
             color=(c11,c10,c10),
         )
         
@@ -99,7 +99,7 @@ class EditState(note_state.NoteState):
 
             vision_offset_y = mouse_tick
             vision_offset_y /= self.matric_ticks_per_beat
-            vision_offset_y *= self.matric_cell_width
+            vision_offset_y *= self.matric_cell_z
             vision_offset_y -= mouse_screen_y
             vision_offset_y += self.matric_y0
             self.vision_offset_y = vision_offset_y

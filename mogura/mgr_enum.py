@@ -1,0 +1,7 @@
+UP = 1
+DOWN = 2
+RIGHT = 4
+LEFT = 8
+
+VERT_MASK = 3
+HORI_MASK = 12

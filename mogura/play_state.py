@@ -39,7 +39,7 @@ class PlayState(note_state.NoteState):
         vision_offset_y %= self.loop_sec6tpb
         vision_offset_y = midi_data.sec6tpb_to_tick(vision_offset_y, self.track_data['tempo_list'], self.track_data['time_multiplier'])
         vision_offset_y /= self.matric_ticks_per_beat
-        vision_offset_y *= self.matric_cell_width
+        vision_offset_y *= self.matric_cell_z
         # self.draw_note_rail(screen, vision_offset_y)
 
         draw_session = self.get_draw_session(screen, vision_offset_y)
@@ -61,9 +61,9 @@ class PlayState(note_state.NoteState):
                         color=(63,63,63,255),
                     )
 
-        self.draw_time_horizontal_line_thin(draw_session)
+        self.draw_time_line_thin(draw_session)
         self.draw_note_rail_ppitch_line(draw_session)
-        self.draw_time_horizontal_line_thick(draw_session)
+        self.draw_time_line_thick(draw_session)
         self.draw_note_signal(draw_session)
 
         screen.fill(
@@ -240,8 +240,8 @@ class PlayState(note_state.NoteState):
         if self.freq_list is not None:
             self.freq_x0_list = []
             self.freq_w_list = []
-            xx0 = self.matric_note_rail_x0
-            xx1 = self.matric_note_rail_x1
+            xx0 = self.matric_note_rail_pp_min
+            xx1 = self.matric_note_rail_pp_max
             for f in range(len(self.freq_list)):
                 xxx0 = xx0 + (xx1-xx0)*(f-1)/len(self.freq_list)
                 xxx1 = xx0 + (xx1-xx0)*(f  )/len(self.freq_list)
