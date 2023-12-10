@@ -31,18 +31,18 @@ class PlayState(note_state.NoteState):
     def screen_tick(self, screen, sec, **kwargs):
         super().screen_tick(screen=screen, sec=sec, **kwargs)
 
-        vision_offset_y = time.time()
-        vision_offset_y -= self.start_sec
-        vision_offset_y *= 1000000
-        vision_offset_y *= self.matric_ticks_per_beat
-        # vision_offset_y %= self.track_data['sec6tpb']
-        vision_offset_y %= self.loop_sec6tpb
-        vision_offset_y = midi_data.sec6tpb_to_tick(vision_offset_y, self.track_data['tempo_list'], self.track_data['time_multiplier'])
-        vision_offset_y /= self.matric_ticks_per_beat
-        vision_offset_y *= self.matric_cell_z
-        # self.draw_note_rail(screen, vision_offset_y)
+        vision_offset_tt = time.time()
+        vision_offset_tt -= self.start_sec
+        vision_offset_tt *= 1000000
+        vision_offset_tt *= self.matric_ticks_per_beat
+        # vision_offset_tt %= self.track_data['sec6tpb']
+        vision_offset_tt %= self.loop_sec6tpb
+        vision_offset_tt = midi_data.sec6tpb_to_tick(vision_offset_tt, self.track_data['tempo_list'], self.track_data['time_multiplier'])
+        vision_offset_tt /= self.matric_ticks_per_beat
+        vision_offset_tt *= self.matric_cell_z
+        # self.draw_note_rail(screen, vision_offset_tt)
 
-        draw_session = self.get_draw_session(screen, vision_offset_y)
+        draw_session = self.get_draw_session(screen, vision_offset_tt)
 
         self.draw_color_note_rail_bg(draw_session)
         self.draw_note_length(draw_session)
@@ -57,7 +57,8 @@ class PlayState(note_state.NoteState):
                     v = max(v,0)
                     v *= 50
                     screen.fill(
-                        rect=(self.freq_x0_list[i],self.matric_y0,self.freq_w_list[i],v),
+                        # rect=(self.freq_pp0_list[i],self.matric_aim_tt,self.freq_pp1_list[i],v),
+                        ret = self.ppttrect_to_xyrect(self.freq_pp0_list[i],self.matric_aim_tt,self.freq_pp1_list[i],self.matric_aim_tt+v),
                         color=(63,63,63,255),
                     )
 
@@ -67,7 +68,8 @@ class PlayState(note_state.NoteState):
         self.draw_note_signal(draw_session)
 
         screen.fill(
-            rect=(0,self.matric_y0,self.matric_screen_size[0],1),
+            # rect=(0,self.matric_aim_tt,self.matric_screen_size[0],1),
+            rect=self.ppttrect_to_xyrect((0,self.matric_aim_tt,self.matric_screen_pp_max,self.matric_aim_tt+1)),
             color=(0,0,0),
         )
 
@@ -213,7 +215,8 @@ class PlayState(note_state.NoteState):
             ppitch0x = (self.track_data['ppitch0']-2) * const.DFT_PITCH_SAMPLE_COUNT
             ppitch1x = (self.track_data['ppitch1']+2) * const.DFT_PITCH_SAMPLE_COUNT
             freq_list = range(ppitch0x, ppitch1x+1)
-            freq_list = reversed(freq_list)
+            if not note_state.PITCH_POS:
+                freq_list = reversed(freq_list)
             freq_list = map(lambda i: i/const.DFT_PITCH_SAMPLE_COUNT, freq_list)
             freq_list = map(lambda i: i-common.A4_PITCH, freq_list)
             freq_list = map(lambda i: common.A4_FREQ*2**(i/12), freq_list)
@@ -238,22 +241,22 @@ class PlayState(note_state.NoteState):
     def update_ui_matrice(self):
         super().update_ui_matrice()
         if self.freq_list is not None:
-            self.freq_x0_list = []
-            self.freq_w_list = []
-            xx0 = self.matric_note_rail_pp_min
-            xx1 = self.matric_note_rail_pp_max
+            self.freq_pp0_list = []
+            self.freq_pp1_list = []
+            pppp0 = self.matric_note_rail_pp_min
+            pppp1 = self.matric_note_rail_pp_max
             for f in range(len(self.freq_list)):
-                xxx0 = xx0 + (xx1-xx0)*(f-1)/len(self.freq_list)
-                xxx1 = xx0 + (xx1-xx0)*(f  )/len(self.freq_list)
-                xxx2 = xx0 + (xx1-xx0)*(f+1)/len(self.freq_list)
-                x0 = int((xxx0+xxx1)/2)
-                x1 = int((xxx1+xxx2)/2)
-                if x1 == x0: x1=x0+1
-                self.freq_x0_list.append(x0)
-                self.freq_w_list.append(x1-x0)
+                ppp0 = pppp0 + (pppp1-pppp0)*(f-1)/len(self.freq_list)
+                ppp1 = pppp0 + (pppp1-pppp0)*(f  )/len(self.freq_list)
+                ppp2 = pppp0 + (pppp1-pppp0)*(f+1)/len(self.freq_list)
+                pp0 = int((ppp0+ppp1)/2)
+                pp1 = int((ppp1+ppp2)/2)
+                if pp1 == pp0: pp1=pp0+1
+                self.freq_pp0_list.append(pp0)
+                self.freq_pp1_list.append(pp1)
         else:
-            self.freq_x0_list = None
-            self.freq_w_list = None
+            self.freq_pp0_list = None
+            self.freq_pp1_list = None
 
     def event_tick(self, event, sec):
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:

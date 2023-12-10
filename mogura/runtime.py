@@ -21,7 +21,7 @@ import time
 import timer_pool
 import user_data
 
-FPS = 60
+FPS = 120
 EPS = FPS * 10
 
 class Runtime:
@@ -103,6 +103,7 @@ class Runtime:
         self.text_draw.on_tick_start()
         self.state_pool.screen_tick(screen=self.screen, text_draw=self.text_draw, sec=sec)
         pygame.display.flip()
+        # pygame.display.update()
 
 
     def event_tick(self, sec):
