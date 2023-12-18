@@ -26,6 +26,8 @@ PITCH_HORI = PITCH_DIRECTION & mgr_enum.HORI_MASK
 TIME_POS = TIME_DIRECTION & mgr_enum.POS_MASK
 PITCH_POS = PITCH_DIRECTION & mgr_enum.POS_MASK
 
+NOTE_SPEED = 2
+
 # pp: pitch axis
 # tt: time axis
 # z: general axis
@@ -398,11 +400,11 @@ class NoteState(null_state.NullState):
 
 
         for noteev in track_data['noteev_list']:
-            noteev['tt'] = noteev['tick']*self.matric_cell_z/self.matric_ticks_per_beat
+            noteev['tt'] = noteev['tick']*self.matric_cell_z*NOTE_SPEED/self.matric_ticks_per_beat
             if 'tick0' in noteev:
-                noteev['tt0'] = noteev['tick0']*self.matric_cell_z/self.matric_ticks_per_beat
+                noteev['tt0'] = noteev['tick0']*self.matric_cell_z*NOTE_SPEED/self.matric_ticks_per_beat
             if 'tick1' in noteev:
-                noteev['tt1'] = noteev['tick1']*self.matric_cell_z/self.matric_ticks_per_beat
+                noteev['tt1'] = noteev['tick1']*self.matric_cell_z*NOTE_SPEED/self.matric_ticks_per_beat
 
 
     def ppitch_to_pp(self,ppitch):
@@ -412,6 +414,7 @@ class NoteState(null_state.NullState):
         ret = tick
         ret /= self.matric_ticks_per_beat
         ret *= self.matric_cell_z
+        ret *= NOTE_SPEED
         ret -= vision_offset_tt
         ret += self.matric_aim_tt
         return ret
@@ -420,6 +423,7 @@ class NoteState(null_state.NullState):
         ret = tt
         ret -= self.matric_aim_tt
         ret += vision_offset_tt
+        ret /= NOTE_SPEED
         ret /= self.matric_cell_z
         ret *= self.matric_ticks_per_beat
         return ret

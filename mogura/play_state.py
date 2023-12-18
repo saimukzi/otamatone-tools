@@ -40,6 +40,7 @@ class PlayState(note_state.NoteState):
         vision_offset_tt = midi_data.sec6tpb_to_tick(vision_offset_tt, self.track_data['tempo_list'], self.track_data['time_multiplier'])
         vision_offset_tt /= self.matric_ticks_per_beat
         vision_offset_tt *= self.matric_cell_z
+        vision_offset_tt *= note_state.NOTE_SPEED
         # self.draw_note_rail(screen, vision_offset_tt)
 
         draw_session = self.get_draw_session(screen, vision_offset_tt)

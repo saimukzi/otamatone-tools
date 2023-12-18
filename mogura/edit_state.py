@@ -102,6 +102,7 @@ class EditState(note_state.NoteState):
             vision_offset_tt = mouse_tick
             vision_offset_tt /= self.matric_ticks_per_beat
             vision_offset_tt *= self.matric_cell_z
+            vision_offset_tt *= note_state.NOTE_SPEED
             vision_offset_tt -= mouse_screen_tt
             vision_offset_tt += self.matric_aim_tt
             self.vision_offset_tt = vision_offset_tt
