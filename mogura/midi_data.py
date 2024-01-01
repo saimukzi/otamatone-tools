@@ -135,7 +135,7 @@ def track_to_time_signature_list(track):
         'numerator': 4,
         'denominator': 4,
         'tick0': 0,
-        'tick1': INF,
+        # 'tick1': INF,
         'tick_anchor':0,
     })
     tick = 0
@@ -147,12 +147,13 @@ def track_to_time_signature_list(track):
             'numerator': msg.numerator,
             'denominator': msg.denominator,
             'tick0': tick,
-            'tick1': INF,
+            # 'tick1': INF,
             'tick_anchor': tick,
         })
 
+    time_signature_list[-1]['tick1'] = tick
     time_signature_list = list(filter(lambda i:i['tick0']<i['tick1'], time_signature_list))
-    time_signature_list[0]['tick0'] = -INF
+    # time_signature_list[0]['tick0'] = -INF
     
     _check_time_signature_list(time_signature_list)
 
@@ -179,11 +180,12 @@ def track_to_tempo_list(track,ticks_per_beat):
 
     #print(ret_tempo_list[-1])
     #ret_tempo_list[-1]['tick1'] = max(end_tick,tick)
-    ret_tempo_list[-1]['tick1'] = INF
+    # ret_tempo_list[-1]['tick1'] = INF
+    ret_tempo_list[-1]['tick1'] = tick
     
     ret_tempo_list = filter(lambda i:i['tick0']<i['tick1'],ret_tempo_list)
     ret_tempo_list = list(ret_tempo_list)
-    ret_tempo_list[0]['tick0'] = -INF
+    # ret_tempo_list[0]['tick0'] = -INF
     
     _check_tempo_list(ret_tempo_list)
     
@@ -193,26 +195,36 @@ def track_to_tempo_list(track,ticks_per_beat):
 def tick_to_sec6tpb(tick, tempo_list, time_multiplier):
     #print(f'HGWHMWQKXA tick={tick}, tempo_list={tempo_list}')
     tempo = tempo_list
-    tempo = filter(lambda i:i['tick0']<=tick,tempo)
-    tempo = filter(lambda i:i['tick1']>tick,tempo)
-    tempo = list(tempo)
-    if len(tempo) != 1:
-        print(f'tick={tick}, tempo={tempo}')
-        assert(False)
-    tempo = tempo[0]
+    if tick < tempo[0]['tick0']:
+        tempo = tempo[0]
+    elif tick >= tempo[-1]['tick1']:
+        tempo = tempo[-1]
+    else:
+        tempo = filter(lambda i:i['tick0']<=tick,tempo)
+        tempo = filter(lambda i:i['tick1']>tick,tempo)
+        tempo = list(tempo)
+        if len(tempo) != 1:
+            print(f'tick={tick}, tempo={tempo}')
+            assert(False)
+        tempo = tempo[0]
     return (tick-tempo['tick_anchor'])*tempo['tempo']*time_multiplier+tempo['sec6tpb_anchor']
 
 
 def sec6tpb_to_tick(sec6tpb, tempo_list, time_multiplier):
     #print(f'IVBIQPSQAA sec6tpb={sec6tpb}, tempo_list={tempo_list}')
     tempo = tempo_list
-    tempo = filter(lambda i:i['sec6tpb0']<=sec6tpb,tempo)
-    tempo = filter(lambda i:i['sec6tpb1']>sec6tpb,tempo)
-    tempo = list(tempo)
-    if len(tempo) != 1:
-        print(tempo)
-        assert(False)
-    tempo = tempo[0]
+    if sec6tpb < tempo[0]['sec6tpb0']:
+        tempo = tempo[0]
+    elif sec6tpb >= tempo[-1]['sec6tpb1']:
+        tempo = tempo[-1]
+    else:
+        tempo = filter(lambda i:i['sec6tpb0']<=sec6tpb,tempo)
+        tempo = filter(lambda i:i['sec6tpb1']>sec6tpb,tempo)
+        tempo = list(tempo)
+        if len(tempo) != 1:
+            print(tempo)
+            assert(False)
+        tempo = tempo[0]
     return (sec6tpb-tempo['sec6tpb_anchor'])/tempo['tempo']/time_multiplier+tempo['tick_anchor']
 
 
@@ -250,8 +262,8 @@ def track_data_chop_tick(track_data, start_bar_tick, start_note_tick, end_note_t
     # for time_signature in time_signature_list:
     #     time_signature['tick0'] = max(time_signature['tick0'], start_bar_tick)
     #     time_signature['tick1'] = min(time_signature['tick1'], end_bar_tick)
-    time_signature_list[0]['tick0']  = -INF
-    time_signature_list[-1]['tick1'] = INF
+    # time_signature_list[0]['tick0']  = -INF
+    # time_signature_list[-1]['tick1'] = INF
     _check_time_signature_list(time_signature_list)
     out_track_data['time_signature_list'] = time_signature_list
 
@@ -263,8 +275,8 @@ def track_data_chop_tick(track_data, start_bar_tick, start_note_tick, end_note_t
     #for tempo in tempo_list:
     #    tempo['tick0'] = max(tempo['tick0'], start_bar_tick)
     #    tempo['tick1'] = min(tempo['tick1'], end_bar_tick)
-    tempo_list[0]['tick0'] = -INF
-    tempo_list[-1]['tick1'] = INF
+    # tempo_list[0]['tick0'] = -INF
+    # tempo_list[-1]['tick1'] = INF
     _check_tempo_list(tempo_list)
     out_track_data['tempo_list'] = tempo_list
 
@@ -497,21 +509,31 @@ def fill_sec6tpb(track_data, time_multiplier):
     _check_tempo_list(tempo_list)
     sec6tpb = 0
     tick = 0
+
+    # debug
+    print('fill_sec6tpb START')
+    for tempo in tempo_list:
+        print(tempo)
+
     for tempo in tempo_list:
         tempo['sec6tpb0'] = sec6tpb
         tempo['tick_anchor'] = tick
         tempo['sec6tpb_anchor'] = sec6tpb
-        tick_inc = tempo['tick1']-tick
+        tick_inc = tempo['tick1']-tempo['tick0']
         sec6tpb_inc = tick_inc*tempo['tempo']*time_multiplier
         tick += tick_inc
         sec6tpb += sec6tpb_inc
         tempo['sec6tpb1'] = sec6tpb
-    tempo_list[0]['sec6tpb0'] = -INF
-    tempo_list[-1]['sec6tpb0'] = INF
+    # tempo_list[0]['sec6tpb0'] = -INF
+    # tempo_list[-1]['sec6tpb0'] = INF
     for noteev in track_data['noteev_list']:
         if 'tick'  in noteev: noteev['sec6tpb']  = tick_to_sec6tpb(noteev['tick'],  tempo_list, time_multiplier)
         if 'tick0' in noteev: noteev['sec6tpb0'] = tick_to_sec6tpb(noteev['tick0'], tempo_list, time_multiplier)
         if 'tick1' in noteev: noteev['sec6tpb1'] = tick_to_sec6tpb(noteev['tick1'], tempo_list, time_multiplier)
+    # debug
+    print('fill_sec6tpb END')
+    for tempo in tempo_list:
+        print(tempo)
 
 def track_data_add_woodblock(track_data, start_tick, end_tick):
     out_track_data = copy.deepcopy(track_data)
@@ -594,11 +616,12 @@ def get_bar_itr(tick0, track_data):
         if tick >= ts['tick1']:
             tsi += 1
             # tick = time_signature_list[tsi]['tick0']
-            ts = time_signature_list[tsi]
-            bar_tick = get_bar_tick(ts, tpb)
-            tick -= ts['tick_anchor']
-            tick = math.ceil(tick/bar_tick)*bar_tick
-            tick += ts['tick_anchor']
+            if tsi < len(time_signature_list):
+                ts = time_signature_list[tsi]
+                bar_tick = get_bar_tick(ts, tpb)
+                tick -= ts['tick_anchor']
+                tick = math.ceil(tick/bar_tick)*bar_tick
+                tick += ts['tick_anchor']
         tick += bar_tick
 
 
@@ -625,18 +648,18 @@ def track_to_end_tick(track):
 
 
 def _check_time_signature_list(time_signature_list):
-    assert(time_signature_list[0]['tick0']==-INF)
-    assert(time_signature_list[-1]['tick1']==INF)
-    for time_signature in time_signature_list:
-        tick = time_signature['tick1']-time_signature['tick0']
+    # assert(time_signature_list[0]['tick0']==-INF)
+    # assert(time_signature_list[-1]['tick1']==INF)
+    # for time_signature in time_signature_list:
+    #     tick = time_signature['tick1']-time_signature['tick0']
     for i in range(len(time_signature_list)-1):
         assert(time_signature_list[i]['tick1']==time_signature_list[i+1]['tick0'])
 
 def _check_tempo_list(tempo_list):
-    assert(tempo_list[0]['tick0']==-INF)
-    assert(tempo_list[-1]['tick1']==INF)
-    for tempo in tempo_list:
-        tick = tempo['tick1']-tempo['tick0']
+    # assert(tempo_list[0]['tick0']==-INF)
+    # assert(tempo_list[-1]['tick1']==INF)
+    # for tempo in tempo_list:
+    #     tick = tempo['tick1']-tempo['tick0']
     for i in range(len(tempo_list)-1):
         assert(tempo_list[i]['tick1']==tempo_list[i+1]['tick0'])
 

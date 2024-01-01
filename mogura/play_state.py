@@ -37,7 +37,9 @@ class PlayState(note_state.NoteState):
         vision_offset_tt *= self.matric_ticks_per_beat
         # vision_offset_tt %= self.track_data['sec6tpb']
         vision_offset_tt %= self.loop_sec6tpb
+        # print(f'sec6tpb={vision_offset_tt}')
         vision_offset_tt = midi_data.sec6tpb_to_tick(vision_offset_tt, self.track_data['tempo_list'], self.track_data['time_multiplier'])
+        # print(f'tick={vision_offset_tt}')
         vision_offset_tt /= self.matric_ticks_per_beat
         vision_offset_tt *= self.matric_cell_z
         vision_offset_tt *= note_state.NOTE_SPEED
@@ -204,7 +206,9 @@ class PlayState(note_state.NoteState):
         midi_data.fill_sec6tpb(play_track_data, time_multiplier)
         midi_data.fill_sec6tpb(display_track_data, time_multiplier)
         self.track_data = display_track_data
-        self.loop_sec6tpb = midi_data.tick_to_sec6tpb(tick_30, play_track_data['tempo_list'], time_multiplier)
+        # self.loop_sec6tpb = midi_data.tick_to_sec6tpb(tick_30, play_track_data['tempo_list'], time_multiplier)
+        self.loop_sec6tpb =   midi_data.tick_to_sec6tpb(play_tick_list[3], play_track_data['tempo_list'], time_multiplier) \
+                            - midi_data.tick_to_sec6tpb(play_tick_list[0], play_track_data['tempo_list'], time_multiplier)
 
         self.start_sec = time.time() + 3
         self.runtime.midi_player.channel_to_volume_dict[0]  = self.runtime.main_vol
