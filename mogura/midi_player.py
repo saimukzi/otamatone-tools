@@ -15,8 +15,7 @@ class MidiPlayer:
         self.beat_start_sec = None
         self.noteev_list = None
         self.noteev_done = None
-        self.ticks_per_beat = None
-        self.loop_sec6tpb = None
+        self.loop_sec = None
         
         self.cache_next_sec = None
 
@@ -31,8 +30,11 @@ class MidiPlayer:
         self.channel_to_volume_dict = {0:0x7f, 15:0x7f}
 
 
-    def play(self,noteev_list,loop_sec6tpb,ticks_per_beat,main_start_sec,beat_start_sec):
+    def play(self,noteev_list,loop_sec,main_start_sec,beat_start_sec):
         assert(beat_start_sec<=main_start_sec)
+        for noteev in noteev_list:
+            assert(noteev['sec']>=0)
+            assert(noteev['sec']<loop_sec)
 
         main_start_sec += DELAY_CORRECT_SEC
         beat_start_sec += DELAY_CORRECT_SEC
@@ -41,17 +43,15 @@ class MidiPlayer:
         self.beat_start_sec = beat_start_sec
         self.noteev_list = copy.deepcopy(noteev_list)
         self.noteev_done = 0
-        self.ticks_per_beat = ticks_per_beat
-        self.loop_sec6tpb = loop_sec6tpb
+        self.loop_sec = loop_sec
         
         self._midiout_open()
         self.midiout.send_message([0xc0, 40])
         self.midiout.send_message([0xcf, 115])
         
         tmp1 = beat_start_sec-main_start_sec
-        tmp1 = math.ceil(tmp1*1000000*ticks_per_beat)
-        tmp0 = round(tmp1//loop_sec6tpb)
-        tmp1 %= loop_sec6tpb
+        tmp0 = round(tmp1//loop_sec)
+        tmp1 %= loop_sec
         tmp1 = get_ceil_note_idx(tmp1,noteev_list)
         if tmp1 == None:
             tmp0 += 1
@@ -79,10 +79,8 @@ class MidiPlayer:
         if self.noteev_done >= len(self.noteev_list):
             self.cache_next_sec = None
             return
-        ret = self.noteev_list[self.noteev_done]['sec6tpb']
-        ret += self.loop_cnt * self.loop_sec6tpb
-        ret /= 1000000
-        ret /= self.ticks_per_beat
+        ret = self.noteev_list[self.noteev_done]['sec']
+        ret += self.loop_cnt * self.loop_sec
         ret += self.main_start_sec
         ret = max(ret,0)
         self.cache_next_sec = ret
@@ -93,19 +91,17 @@ class MidiPlayer:
             return
         if sec < self.beat_start_sec: return
         c15_only = sec < self.main_start_sec
-        sec6tpb = sec
-        sec6tpb -= self.main_start_sec
-        sec6tpb *= self.ticks_per_beat
-        sec6tpb *= 1000000
-        sec6tpb -= self.loop_cnt * self.loop_sec6tpb
-        #print(f'sec6tpb = {sec6tpb}')
+        sec = sec
+        sec -= self.main_start_sec
+        sec -= self.loop_cnt * self.loop_sec
+        #print(f'sec = {sec}')
         #print(f'noteev_done = {self.noteev_done}')
         while True:
             #print(f'self.noteev_done={self.noteev_done}')
             #if self.noteev_done >= len(self.noteev_list): break
             noteev = self.noteev_list[self.noteev_done]
             #print(noteev)
-            if sec6tpb < noteev['sec6tpb']: break
+            if sec < noteev['sec']: break
             #print(noteev)
             if noteev['type'] == 'on':
                 channel = noteev['channel']
@@ -120,7 +116,7 @@ class MidiPlayer:
             self.noteev_done += 1
             if self.noteev_done >= len(self.noteev_list):
                 self.noteev_done -= len(self.noteev_list)
-                sec6tpb -= self.loop_sec6tpb
+                sec -= self.loop_sec
                 self.loop_cnt += 1
 
     def _midiout_open(self):
@@ -140,9 +136,9 @@ class MidiPlayer:
         self.midiout = None
 
 
-def get_ceil_note_idx(sec6tpb, noteev_list):
+def get_ceil_note_idx(sec, noteev_list):
     for i in range(len(noteev_list)):
         noteev = noteev_list[i]
-        if sec6tpb < noteev['sec6tpb']:
+        if sec < noteev['sec']:
             return i
     return None

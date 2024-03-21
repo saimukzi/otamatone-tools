@@ -24,7 +24,7 @@ class PlayState(note_state.NoteState):
         
         self.start_sec = None
         #self.track_list = None
-        self.loop_sec6tpb = None
+        self.loop_sec = None
 
         self.freq_list = None
 
@@ -33,12 +33,12 @@ class PlayState(note_state.NoteState):
 
         vision_offset_tt = time.time()
         vision_offset_tt -= self.start_sec
-        vision_offset_tt *= 1000000
-        vision_offset_tt *= self.matric_ticks_per_beat
-        # vision_offset_tt %= self.track_data['sec6tpb']
-        vision_offset_tt %= self.loop_sec6tpb
-        # print(f'sec6tpb={vision_offset_tt}')
-        vision_offset_tt = midi_data.sec6tpb_to_tick(vision_offset_tt, self.track_data['tempo_list'], self.track_data['time_multiplier'])
+        # vision_offset_tt *= 1000000
+        # vision_offset_tt *= self.matric_ticks_per_beat
+        # vision_offset_tt %= self.track_data['sec']
+        vision_offset_tt %= self.loop_sec
+        # print(f'sec={vision_offset_tt}')
+        vision_offset_tt = midi_data.sec_to_tick(vision_offset_tt, self.track_data['tempo_list'])
         # print(f'tick={vision_offset_tt}')
         vision_offset_tt /= self.matric_ticks_per_beat
         vision_offset_tt *= self.matric_cell_z
@@ -80,7 +80,7 @@ class PlayState(note_state.NoteState):
 #        src_track_data = self.runtime.midi_data['track_list'][0]
 #        
 #        play_tick_list    = list(map(lambda i:i*self.runtime.midi_data['ticks_per_beat'],self.runtime.play_beat_list))
-#        play_sec6tpb_list = list(map(lambda i:midi_data.tick_to_sec6tpb(i,src_track_data['tempo_list']),play_tick_list))
+#        play_sec_list = list(map(lambda i:midi_data.tick_to_sec(i,src_track_data['tempo_list']),play_tick_list))
 #
 #        self.track_data = {}
 #
@@ -94,9 +94,9 @@ class PlayState(note_state.NoteState):
 #            noteev['tick']  -= play_tick_list[0]
 #            if 'tick0' in noteev: noteev['tick0'] -= play_tick_list[0]
 #            if 'tick1' in noteev: noteev['tick1'] -= play_tick_list[0]
-#            noteev['sec6tpb']  -= play_sec6tpb_list[0]
-#            if 'sec6tpb0' in noteev: noteev['sec6tpb0'] -= play_sec6tpb_list[0]
-#            if 'sec6tpb1' in noteev: noteev['sec6tpb1'] -= play_sec6tpb_list[0]
+#            noteev['sec']  -= play_sec_list[0]
+#            if 'sec0' in noteev: noteev['sec0'] -= play_sec_list[0]
+#            if 'sec1' in noteev: noteev['sec1'] -= play_sec_list[0]
 #
 #        play_noteev_list = copy.deepcopy(noteev_list)
 #
@@ -105,18 +105,18 @@ class PlayState(note_state.NoteState):
 #            noteev['tick']  -= play_tick_list[3]-play_tick_list[0]
 #            if 'tick0' in noteev: noteev['tick0'] -= play_tick_list[3]-play_tick_list[0]
 #            if 'tick1' in noteev: noteev['tick1'] -= play_tick_list[3]-play_tick_list[0]
-#            noteev['sec6tpb']  -= play_sec6tpb_list[3]-play_sec6tpb_list[0]
-#            if 'sec6tpb0' in noteev: noteev['sec6tpb0'] -= play_sec6tpb_list[3]-play_sec6tpb_list[0]
-#            if 'sec6tpb1' in noteev: noteev['sec6tpb1'] -= play_sec6tpb_list[3]-play_sec6tpb_list[0]
+#            noteev['sec']  -= play_sec_list[3]-play_sec_list[0]
+#            if 'sec0' in noteev: noteev['sec0'] -= play_sec_list[3]-play_sec_list[0]
+#            if 'sec1' in noteev: noteev['sec1'] -= play_sec_list[3]-play_sec_list[0]
 #
 #        noteev_list1 = copy.deepcopy(noteev_list)
 #        for noteev in noteev_list1:
 #            noteev['tick']  += play_tick_list[3]-play_tick_list[0]
 #            if 'tick0' in noteev: noteev['tick0'] += play_tick_list[3]-play_tick_list[0]
 #            if 'tick1' in noteev: noteev['tick1'] += play_tick_list[3]-play_tick_list[0]
-#            noteev['sec6tpb']  += play_sec6tpb_list[3]-play_sec6tpb_list[0]
-#            if 'sec6tpb0' in noteev: noteev['sec6tpb0'] += play_sec6tpb_list[3]-play_sec6tpb_list[0]
-#            if 'sec6tpb1' in noteev: noteev['sec6tpb1'] += play_sec6tpb_list[3]-play_sec6tpb_list[0]
+#            noteev['sec']  += play_sec_list[3]-play_sec_list[0]
+#            if 'sec0' in noteev: noteev['sec0'] += play_sec_list[3]-play_sec_list[0]
+#            if 'sec1' in noteev: noteev['sec1'] += play_sec_list[3]-play_sec_list[0]
 #
 #        noteev_list = noteev_list0+noteev_list+noteev_list1
 #
@@ -144,55 +144,55 @@ class PlayState(note_state.NoteState):
 #        for tempo in tempo_list:
 #            tempo['tick0'] -= play_tick_list[0]
 #            tempo['tick1'] -= play_tick_list[0]
-#            tempo['sec6tpb0'] -= play_sec6tpb_list[0]
-#            tempo['sec6tpb1'] -= play_sec6tpb_list[0]
+#            tempo['sec0'] -= play_sec_list[0]
+#            tempo['sec1'] -= play_sec_list[0]
 #        tempo_list[0]['tick0']    = 0
 #        tempo_list[0]['tick1']    = play_tick_list[3] - play_tick_list[0]
-#        tempo_list[0]['sec6tpb0'] = 0
-#        tempo_list[0]['sec6tpb1'] = play_sec6tpb_list[3] - play_sec6tpb_list[0]
+#        tempo_list[0]['sec0'] = 0
+#        tempo_list[0]['sec1'] = play_sec_list[3] - play_sec_list[0]
 #        self.track_data['tempo_list'] = tempo_list
 #
 #        self.track_data['pitch1'] = src_track_data['pitch1']
 #        self.track_data['pitch0'] = src_track_data['pitch0']
 #        
-#        self.track_data['sec6tpb'] = play_sec6tpb_list[3]-play_sec6tpb_list[0]
+#        self.track_data['sec'] = play_sec_list[3]-play_sec_list[0]
 #
-#        min_sec6tpb = play_sec6tpb_list[1]-play_sec6tpb_list[0]
-#        max_sec6tpb = play_sec6tpb_list[2]-play_sec6tpb_list[0]
-#        sec6tpb_30 = play_sec6tpb_list[3]-play_sec6tpb_list[0]
+#        min_sec = play_sec_list[1]-play_sec_list[0]
+#        max_sec = play_sec_list[2]-play_sec_list[0]
+#        sec_30 = play_sec_list[3]-play_sec_list[0]
 #        play_noteev_list = filter(lambda i:i['type']=='on',play_noteev_list)
 #        play_noteev_list = list(play_noteev_list)
 #        for noteev in play_noteev_list:
-#            noteev['sec6tpb0'] = max(noteev['sec6tpb0'],min_sec6tpb)
-#            noteev['sec6tpb1'] = min(noteev['sec6tpb1'],max_sec6tpb)
-#            noteev['sec6tpb']  = noteev['sec6tpb0']
-#            noteev['sort_key'] = (noteev['sec6tpb'],1,noteev['pitch'])
+#            noteev['sec0'] = max(noteev['sec0'],min_sec)
+#            noteev['sec1'] = min(noteev['sec1'],max_sec)
+#            noteev['sec']  = noteev['sec0']
+#            noteev['sort_key'] = (noteev['sec'],1,noteev['pitch'])
 #        play_noteev_off_list = copy.deepcopy(play_noteev_list)
 #        for noteev in play_noteev_off_list:
 #            noteev['type'] = 'off'
-#            noteev['sec6tpb']  = noteev['sec6tpb1']
-#            noteev['sort_key'] = (noteev['sec6tpb'],0,noteev['pitch'])
+#            noteev['sec']  = noteev['sec1']
+#            noteev['sort_key'] = (noteev['sec'],0,noteev['pitch'])
 #        play_noteev_list = play_noteev_list + play_noteev_off_list
 #        play_noteev_list = sorted(play_noteev_list, key=lambda i:i['sort_key'])
 
         #print(self.runtime.play_beat_list)
         play_track_data = copy.deepcopy(self.runtime.midi_data['track_list'][0])
         play_tick_list    = list(map(lambda i:i*play_track_data['ticks_per_beat'],self.runtime.play_beat_list))
-        # play_sec6tpb_list = list(map(lambda i:midi_data.tick_to_sec6tpb(i,play_track_data['tempo_list']),play_tick_list))
+        # play_sec_list = list(map(lambda i:midi_data.tick_to_sec(i,play_track_data['tempo_list']),play_tick_list))
         play_track_data = midi_data.track_data_chop_tick(play_track_data, *play_tick_list)
         play_track_data = midi_data.track_data_move_tick(play_track_data, -play_tick_list[0])
-        # play_track_data = midi_data.track_data_move_sec6tpb(play_track_data, -play_sec6tpb_list[0])
+        # play_track_data = midi_data.track_data_move_sec(play_track_data, -play_sec_list[0])
         
         tick_30    = play_tick_list[3]-play_tick_list[0]
-        # sec6tpb_30 = play_sec6tpb_list[3]-play_sec6tpb_list[0]
-        #print(f'YDXUFZLYQK tick_30={tick_30}, sec6tpb_30={sec6tpb_30}, play_tick_list={play_tick_list}, play_sec6tpb_list={play_sec6tpb_list}')
+        # sec_30 = play_sec_list[3]-play_sec_list[0]
+        #print(f'YDXUFZLYQK tick_30={tick_30}, sec_30={sec_30}, play_tick_list={play_tick_list}, play_sec_list={play_sec_list}')
         display_track_data = copy.deepcopy(play_track_data)
         display_track_data0 = copy.deepcopy(display_track_data)
         display_track_data0 = midi_data.track_data_move_tick(display_track_data0, -tick_30)
-        # display_track_data0 = midi_data.track_data_move_sec6tpb(display_track_data0, -sec6tpb_30)
+        # display_track_data0 = midi_data.track_data_move_sec(display_track_data0, -sec_30)
         display_track_data1 = copy.deepcopy(display_track_data)
         display_track_data1 = midi_data.track_data_move_tick(display_track_data1, tick_30)
-        # display_track_data1 = midi_data.track_data_move_sec6tpb(display_track_data1, sec6tpb_30)
+        # display_track_data1 = midi_data.track_data_move_sec(display_track_data1, sec_30)
         # for dm in display_track_data0['noteev_list']: dm['src']='0'
         # for dm in display_track_data['noteev_list']:  dm['src']='1'
         # for dm in display_track_data1['noteev_list']: dm['src']='2'
@@ -203,17 +203,16 @@ class PlayState(note_state.NoteState):
         time_multiplier = self.runtime.time_multiplier()
         # play_track_data = midi_data.track_data_time_multiply(play_track_data, time_multiplier)
         # display_track_data = midi_data.track_data_time_multiply(display_track_data, time_multiplier)
-        midi_data.fill_sec6tpb(play_track_data, time_multiplier)
-        midi_data.fill_sec6tpb(display_track_data, time_multiplier)
+        midi_data.fill_sec(play_track_data, time_multiplier)
+        midi_data.fill_sec(display_track_data, time_multiplier)
         self.track_data = display_track_data
-        # self.loop_sec6tpb = midi_data.tick_to_sec6tpb(tick_30, play_track_data['tempo_list'], time_multiplier)
-        self.loop_sec6tpb =   midi_data.tick_to_sec6tpb(play_tick_list[3], play_track_data['tempo_list'], time_multiplier) \
-                            - midi_data.tick_to_sec6tpb(play_tick_list[0], play_track_data['tempo_list'], time_multiplier)
+        self.loop_sec =   midi_data.tick_to_sec(play_tick_list[3], play_track_data['tempo_list']) \
+                        - midi_data.tick_to_sec(play_tick_list[0], play_track_data['tempo_list'])
 
         self.start_sec = time.time() + 3
         self.runtime.midi_player.channel_to_volume_dict[0]  = self.runtime.main_vol
         self.runtime.midi_player.channel_to_volume_dict[15] = self.runtime.beat_vol
-        self.runtime.midi_player.play(play_track_data['noteev_list'],self.loop_sec6tpb,play_track_data['ticks_per_beat'],self.start_sec,self.start_sec-2)
+        self.runtime.midi_player.play(play_track_data['noteev_list'],self.loop_sec,self.start_sec,self.start_sec-2)
 
         self.audio_input_enabled = self.runtime.config['audio_input_enabled']
         if self.audio_input_enabled:
