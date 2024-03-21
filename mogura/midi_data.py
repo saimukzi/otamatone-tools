@@ -1,16 +1,30 @@
+import common
 import copy
 import itertools
 #import json
 import math
 import mido
+import os
 
 
 INF = float('inf')
 
 
 def path_to_data(file_path):
+    if file_path.endswith('.json'):
+        return json_path_to_data(file_path)
     if file_path.endswith('.mid'):
         return midi_path_to_data(file_path)
+
+
+def json_path_to_data(file_path):
+    json_data = common.json_path_to_data(file_path)
+    sheet_path = json_data['SHEET_PATH']
+    sheet_path = os.path.join(os.path.dirname(file_path),sheet_path)
+
+    ret = mid_to_data(mido.MidiFile(sheet_path))
+
+    return ret
 
 
 def midi_path_to_data(file_path):

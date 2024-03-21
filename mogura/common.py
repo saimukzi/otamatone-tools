@@ -1,3 +1,5 @@
+import json
+
 PHI = (1+5**0.5)/2 
 A4_FREQ = 440
 A4_PITCH = 69
@@ -14,3 +16,7 @@ def anchor(xy, size, anc):
          (-height//2) if dy==1 else \
          0
     return (x+dx,y+dy)
+
+def json_path_to_data(path):
+    with open(path) as f:
+        return json.load(f)
