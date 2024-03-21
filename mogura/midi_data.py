@@ -728,6 +728,8 @@ def audio_tick_to_sec(tick, audio_data):
     return sec
 
 def audio_data_move_tick(audio_data, tick_diff):
+    if audio_data is None:
+        return None
     out_audio_data = copy.deepcopy(audio_data)
     timestamp_list = out_audio_data['timestamp_list']
     for timestamp in timestamp_list:
