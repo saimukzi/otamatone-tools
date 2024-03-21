@@ -23,6 +23,9 @@ def json_path_to_data(file_path):
     sheet_path = os.path.join(os.path.dirname(file_path),sheet_path)
 
     ret = mid_to_data(mido.MidiFile(sheet_path))
+    ret['audio_data'] = {}
+    ret['audio_data']['timestamp_list'] = json_data['TIMESTAMP_LIST']
+    ret['audio_data']['SAMPLE_RATE'] = 48000
 
     return ret
 
@@ -522,7 +525,7 @@ def merge_track_data(src_track_data_list, tick_list):
 #     return out_track_data
 
 
-def fill_sec(track_data, time_multiplier):
+def fill_sec(track_data, time_multiplier, audio_data):
     track_data['time_multiplier'] = time_multiplier
     ticks_per_beat = track_data['ticks_per_beat']
     tempo_list = track_data['tempo_list']
@@ -540,12 +543,21 @@ def fill_sec(track_data, time_multiplier):
         tempo['tick_anchor'] = tick
         tempo['sec_anchor'] = sec
         tick_inc = tempo['tick1']-tempo['tick0']
-        sec_per_tick = tempo['tempo']*time_multiplier/ticks_per_beat/1000000
-        tempo['sec_per_tick'] = sec_per_tick
-        sec_inc = tick_inc*sec_per_tick
-        tick += tick_inc
-        sec += sec_inc
-        tempo['sec1'] = sec
+        if (audio_data is not None) and (time_multiplier == 1):
+            sec0 = audio_tick_to_sec(tempo['tick0'], audio_data)
+            sec1 = audio_tick_to_sec(tempo['tick1'], audio_data)
+            sec_inc = sec1-sec0
+            tempo['sec_per_tick'] = sec_inc/tick_inc
+            tick += tick_inc
+            sec += sec_inc
+            tempo['sec1'] = sec
+        else:
+            sec_per_tick = tempo['tempo']*time_multiplier/ticks_per_beat/1000000
+            tempo['sec_per_tick'] = sec_per_tick
+            sec_inc = tick_inc*sec_per_tick
+            tick += tick_inc
+            sec += sec_inc
+            tempo['sec1'] = sec
     # tempo_list[0]['sec0'] = -INF
     # tempo_list[-1]['sec0'] = INF
     for noteev in track_data['noteev_list']:
@@ -691,3 +703,25 @@ def track_data_cal_ppitch(track_data, dpitch):
         noteev['ppitch'] = noteev['opitch'] + dpitch
     track_data['ppitch0'] = track_data['opitch0'] + dpitch
     track_data['ppitch1'] = track_data['opitch1'] + dpitch
+
+def audio_tick_to_sec(tick, audio_data):
+    timestamp_list = audio_data['timestamp_list']
+    for i in range(len(timestamp_list)-1):
+        timestamp0 = timestamp_list[i]
+        timestamp1 = timestamp_list[i+1]
+        if tick < timestamp_list[i+1]['SHEET_TICK']:
+            break
+    tick0 = timestamp0['SHEET_TICK']
+    tick1 = timestamp1['SHEET_TICK']
+    sample0 = timestamp0['AUDIO_SAMPLE']
+    sample1 = timestamp1['AUDIO_SAMPLE']
+    sample = sample0 + (sample1-sample0)*(tick-tick0)/(tick1-tick0)
+    sec = sample/audio_data['SAMPLE_RATE']
+    return sec
+
+def audio_data_move_tick(audio_data, tick_diff):
+    out_audio_data = copy.deepcopy(audio_data)
+    timestamp_list = out_audio_data['timestamp_list']
+    for timestamp in timestamp_list:
+        timestamp['SHEET_TICK'] += tick_diff
+    return out_audio_data

@@ -199,12 +199,15 @@ class PlayState(note_state.NoteState):
         display_track_data = midi_data.merge_track_data([display_track_data0,display_track_data,display_track_data1],[0,tick_30])
 
         play_track_data = midi_data.track_data_add_woodblock(play_track_data, 0, tick_30)
-        
+
+        audio_data = copy.deepcopy(self.runtime.midi_data['audio_data'])
+        audio_data = midi_data.audio_data_move_tick(audio_data, -play_tick_list[0])
+
         time_multiplier = self.runtime.time_multiplier()
         # play_track_data = midi_data.track_data_time_multiply(play_track_data, time_multiplier)
         # display_track_data = midi_data.track_data_time_multiply(display_track_data, time_multiplier)
-        midi_data.fill_sec(play_track_data, time_multiplier)
-        midi_data.fill_sec(display_track_data, time_multiplier)
+        midi_data.fill_sec(play_track_data, time_multiplier, audio_data)
+        midi_data.fill_sec(display_track_data, time_multiplier, audio_data)
         self.track_data = display_track_data
         self.loop_sec =   midi_data.tick_to_sec(play_tick_list[3], play_track_data['tempo_list']) \
                         - midi_data.tick_to_sec(play_tick_list[0], play_track_data['tempo_list'])
