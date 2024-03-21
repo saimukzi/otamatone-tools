@@ -6,6 +6,8 @@ import rtmidi
 VOLUME_MIN = 0
 VOLUME_MAX = 0x7f
 
+DELAY_CORRECT_SEC = -0.15
+
 class MidiPlayer:
 
     def _set_none(self):
@@ -31,6 +33,9 @@ class MidiPlayer:
 
     def play(self,noteev_list,loop_sec6tpb,ticks_per_beat,main_start_sec,beat_start_sec):
         assert(beat_start_sec<=main_start_sec)
+
+        main_start_sec += DELAY_CORRECT_SEC
+        beat_start_sec += DELAY_CORRECT_SEC
     
         self.main_start_sec = main_start_sec
         self.beat_start_sec = beat_start_sec
