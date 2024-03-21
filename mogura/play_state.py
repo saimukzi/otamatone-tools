@@ -209,8 +209,8 @@ class PlayState(note_state.NoteState):
         midi_data.fill_sec(play_track_data, time_multiplier, audio_data)
         midi_data.fill_sec(display_track_data, time_multiplier, audio_data)
         self.track_data = display_track_data
-        self.loop_sec =   midi_data.tick_to_sec(play_tick_list[3], play_track_data['tempo_list']) \
-                        - midi_data.tick_to_sec(play_tick_list[0], play_track_data['tempo_list'])
+        self.loop_sec =   midi_data.tick_to_sec(tick_30, play_track_data['tempo_list']) \
+                        - midi_data.tick_to_sec(0, play_track_data['tempo_list'])
 
         self.start_sec = time.time() + 3
         self.runtime.midi_player.channel_to_volume_dict[0]  = self.runtime.main_vol
