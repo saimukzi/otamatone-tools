@@ -1,9 +1,12 @@
 import audio_input
+import audio_output
 import concurrent
 import concurrent.futures
 import config_audio_input_device_state
 import config_audio_input_samplerate_state
 import config_audio_input_state
+import config_audio_output_device_state
+import config_audio_output_state
 import config_state
 import edit_state
 import edit_state
@@ -45,11 +48,18 @@ class Runtime:
         
         self.config = user_data.load_user_data()
         if self.config is None:
-            self.config = {
-                'audio_input_enabled': False,
-                'audio_input_device_info': None,
-                'audio_input_sample_rate': 44100,
-            }
+            self.config = {}
+        
+        DEFAULT_CONFIG = {
+            'audio_input_enabled': False,
+            'audio_input_device_info': None,
+            'audio_input_sample_rate': 44100,
+            'audio_output_enabled': False,
+            'audio_output_device_info': None,
+        }
+        for key in DEFAULT_CONFIG:
+            if key not in self.config:
+                self.config[key] = DEFAULT_CONFIG[key]
 
         self.speed_level = self.init_kargs['speed']
         self.beat_vol = 127
@@ -65,6 +75,7 @@ class Runtime:
             self.screen = pygame.display.set_mode((1280,720),flags=pygame.RESIZABLE)
             
             self.midi_player = midi_player.MidiPlayer()
+            self.audio_output = audio_output.AudioOutput(self)
             
             t0 = time.time()
             self.timer_pool.add_timer(self.midi_player)
@@ -74,6 +85,8 @@ class Runtime:
             self.state_pool.add_state(config_audio_input_device_state.ConfigAudioInputDeviceState(self))
             self.state_pool.add_state(config_audio_input_samplerate_state.ConfigAudioInputSampleRateState(self))
             self.state_pool.add_state(config_audio_input_state.ConfigAudioInputState(self))
+            self.state_pool.add_state(config_audio_output_device_state.ConfigAudioOutputDeviceState(self))
+            self.state_pool.add_state(config_audio_output_state.ConfigAudioOutputState(self))
             self.state_pool.add_state(config_state.ConfigState(self))
             self.state_pool.add_state(edit_state.EditState(self))
             self.state_pool.add_state(null_state.NullState(self))

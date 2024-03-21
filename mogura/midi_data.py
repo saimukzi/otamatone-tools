@@ -5,6 +5,7 @@ import itertools
 import math
 import mido
 import os
+import soundfile
 
 
 INF = float('inf')
@@ -25,13 +26,21 @@ def json_path_to_data(file_path):
     ret = mid_to_data(mido.MidiFile(sheet_path))
     ret['audio_data'] = {}
     ret['audio_data']['timestamp_list'] = json_data['TIMESTAMP_LIST']
-    ret['audio_data']['SAMPLE_RATE'] = 48000
+
+    audio_path = json_data['AUDIO_PATH']
+    audio_path = os.path.join(os.path.dirname(file_path),audio_path)
+    audio_np, audio_sr = soundfile.read(audio_path, dtype='int16')
+    audio_bytes = audio_np.tobytes()
+    ret['audio_data']['data'] = audio_bytes
+    ret['audio_data']['SAMPLE_RATE'] = audio_sr
 
     return ret
 
 
 def midi_path_to_data(file_path):
-    return mid_to_data(mido.MidiFile(file_path))
+    ret = mid_to_data(mido.MidiFile(file_path))
+    ret['audio_data'] = None
+    return ret
 
 
 def mid_to_data(mid):
@@ -558,8 +567,7 @@ def fill_sec(track_data, time_multiplier, audio_data):
             tick += tick_inc
             sec += sec_inc
             tempo['sec1'] = sec
-    # tempo_list[0]['sec0'] = -INF
-    # tempo_list[-1]['sec0'] = INF
+
     for noteev in track_data['noteev_list']:
         if 'tick'  in noteev: noteev['sec']  = tick_to_sec(noteev['tick'],  tempo_list)
         if 'tick0' in noteev: noteev['sec0'] = tick_to_sec(noteev['tick0'], tempo_list)

@@ -217,6 +217,9 @@ class PlayState(note_state.NoteState):
         self.runtime.midi_player.channel_to_volume_dict[15] = self.runtime.beat_vol
         self.runtime.midi_player.play(play_track_data['noteev_list'],self.loop_sec,self.start_sec,self.start_sec-2)
 
+        if self.runtime.config['audio_output_enabled'] and (time_multiplier == 1):
+            self.runtime.audio_output.play(audio_data, self.loop_sec, self.start_sec)
+
         self.audio_input_enabled = self.runtime.config['audio_input_enabled']
         if self.audio_input_enabled:
             ppitch0x = (self.track_data['ppitch0']-2) * const.DFT_PITCH_SAMPLE_COUNT
@@ -243,6 +246,7 @@ class PlayState(note_state.NoteState):
         self.runtime.midi_player.stop()
         self.dft.stop()
         self.audio_input.stop()
+        self.runtime.audio_output.stop()
         super().on_inactive()
 
     def update_ui_matrice(self):
