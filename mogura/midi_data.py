@@ -9,6 +9,11 @@ INF = float('inf')
 
 
 def path_to_data(file_path):
+    if file_path.endswith('.mid'):
+        return midi_path_to_data(file_path)
+
+
+def midi_path_to_data(file_path):
     return mid_to_data(mido.MidiFile(file_path))
 
 
