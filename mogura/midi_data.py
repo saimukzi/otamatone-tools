@@ -238,7 +238,8 @@ def tick_to_sec(tick, tempo_list):
             print(f'tick={tick}, tempo={tempo}')
             assert(False)
         tempo = tempo[0]
-    return (tick-tempo['tick_anchor'])*tempo['sec_per_tick']+tempo['sec_anchor']
+    # return (tick-tempo['tick_anchor'])*tempo['sec_per_tick']+tempo['sec_anchor']
+    return (tempo['sec1']-tempo['sec0'])*(tick-tempo['tick0'])/(tempo['tick1']-tempo['tick0'])+tempo['sec0']
 
 
 def sec_to_tick(sec, tempo_list):
@@ -256,7 +257,8 @@ def sec_to_tick(sec, tempo_list):
             print(tempo)
             assert(False)
         tempo = tempo[0]
-    return (sec-tempo['sec_anchor'])/tempo['sec_per_tick']+tempo['tick_anchor']
+    #return (sec-tempo['sec_anchor'])/tempo['sec_per_tick']+tempo['tick_anchor']
+    return (tempo['tick1']-tempo['tick0'])*(sec-tempo['sec0'])/(tempo['sec1']-tempo['sec0'])+tempo['tick0']
 
 
 def track_data_chop_tick(track_data, start_bar_tick, start_note_tick, end_note_tick, end_bar_tick):
@@ -549,8 +551,8 @@ def fill_sec(track_data, time_multiplier, audio_data):
 
     for tempo in tempo_list:
         tempo['sec0'] = sec
-        tempo['tick_anchor'] = tick
-        tempo['sec_anchor'] = sec
+        # tempo['tick_anchor'] = tick
+        # tempo['sec_anchor'] = sec
         tick_inc = tempo['tick1']-tempo['tick0']
         if (audio_data is not None) and (time_multiplier == 1):
             sec0 = audio_tick_to_sec(tempo['tick0'], audio_data)
