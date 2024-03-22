@@ -505,22 +505,29 @@ def merge_track_data(src_track_data_list, tick_list):
         tick = tick_list[i]
 
         tempo = src_tempo_list_list[i][-1]
-        temposec = (tick-tempo['tick0'])*(tempo['temposec1']-tempo['temposec0'])/(tempo['tick1']-tempo['tick0'])+tempo['temposec0']
-        orisec = (tick-tempo['tick0'])*(tempo['orisec1']-tempo['orisec0'])/(tempo['tick1']-tempo['tick0'])+tempo['orisec0']
-        audiosample = (tick-tempo['tick0'])*(tempo['audiosample1']-tempo['audiosample0'])/(tempo['tick1']-tempo['tick0'])+tempo['audiosample0']
+
+        # temposec = (tick-tempo['tick0'])*(tempo['temposec1']-tempo['temposec0'])/(tempo['tick1']-tempo['tick0'])+tempo['temposec0']
+        # orisec = (tick-tempo['tick0'])*(tempo['orisec1']-tempo['orisec0'])/(tempo['tick1']-tempo['tick0'])+tempo['orisec0']
+        tempo['temposec1'] = tempo_conv(tick, 'tick', 'temposec', [tempo])
+        tempo['orisec1'] = tempo_conv(tick, 'tick', 'orisec', [tempo])
+        # audiosample = (tick-tempo['tick0'])*(tempo['audiosample1']-tempo['audiosample0'])/(tempo['tick1']-tempo['tick0'])+tempo['audiosample0']
+        # tempo['audiosample1'] = audiosample
+        if 'audiosample1' in tempo:
+            tempo['audiosample1'] = tempo_conv(tick, 'tick', 'audiosample', [tempo])
         tempo['tick1'] = tick
-        tempo['temposec1'] = temposec
-        tempo['orisec1'] = orisec
-        tempo['audiosample1'] = audiosample
 
         tempo = src_tempo_list_list[i+1][0]
-        temposec = (tick-tempo['tick0'])*(tempo['temposec1']-tempo['temposec0'])/(tempo['tick1']-tempo['tick0'])+tempo['temposec0']
-        orisec = (tick-tempo['tick0'])*(tempo['orisec1']-tempo['orisec0'])/(tempo['tick1']-tempo['tick0'])+tempo['orisec0']
-        audiosample = (tick-tempo['tick0'])*(tempo['audiosample1']-tempo['audiosample0'])/(tempo['tick1']-tempo['tick0'])+tempo['audiosample0']
+        # temposec = (tick-tempo['tick0'])*(tempo['temposec1']-tempo['temposec0'])/(tempo['tick1']-tempo['tick0'])+tempo['temposec0']
+        # orisec = (tick-tempo['tick0'])*(tempo['orisec1']-tempo['orisec0'])/(tempo['tick1']-tempo['tick0'])+tempo['orisec0']
+        # audiosample = (tick-tempo['tick0'])*(tempo['audiosample1']-tempo['audiosample0'])/(tempo['tick1']-tempo['tick0'])+tempo['audiosample0']
+        # tempo['temposec0'] = temposec
+        # tempo['orisec0'] = orisec
+        # tempo['audiosample0'] = audiosample
+        tempo['temposec0'] = tempo_conv(tick, 'tick', 'temposec', [tempo])
+        tempo['orisec0'] = tempo_conv(tick, 'tick', 'orisec', [tempo])
+        if 'audiosample0' in tempo:
+            tempo['audiosample0'] = tempo_conv(tick, 'tick', 'audiosample', [tempo])
         tempo['tick0'] = tick
-        tempo['temposec0'] = temposec
-        tempo['orisec0'] = orisec
-        tempo['audiosample0'] = audiosample
 
     out_tempo_list = itertools.chain(*src_tempo_list_list)
     out_tempo_list = list(out_tempo_list)
@@ -708,9 +715,14 @@ def last_bar_tick(track_data):
 def get_bar_itr(tick0, track_data):
     tpb = track_data['ticks_per_beat']
     time_signature_list = track_data['time_signature_list']
-    time_signature_list = list(filter(lambda i:i['tick1']>tick0,time_signature_list))
-    tsi = 0
-    ts = time_signature_list[tsi]
+    # time_signature_list = list(filter(lambda i:i['tick1']>tick0,time_signature_list))
+    # while time_signature_list[tsi]['tick1']<=tick0:
+    #     ts = time_signature_list[tsi]
+    #     tsi += 1
+    for tsi in range(len(time_signature_list)):
+        ts = time_signature_list[tsi]
+        if ts['tick1'] > tick0:
+            break
     bar_tick = get_bar_tick(ts, tpb)
     tick = tick0
     tick -= ts['tick_anchor']
@@ -720,15 +732,13 @@ def get_bar_itr(tick0, track_data):
     tick += ts['tick_anchor']
     while True:
         yield(tick)
-        if tick >= ts['tick1']:
+        if (tick >= ts['tick1']) and (tsi+1 < len(time_signature_list)):
             tsi += 1
-            # tick = time_signature_list[tsi]['tick0']
-            if tsi < len(time_signature_list):
-                ts = time_signature_list[tsi]
-                bar_tick = get_bar_tick(ts, tpb)
-                tick -= ts['tick_anchor']
-                tick = math.ceil(tick/bar_tick)*bar_tick
-                tick += ts['tick_anchor']
+            ts = time_signature_list[tsi]
+            bar_tick = get_bar_tick(ts, tpb)
+            tick -= ts['tick_anchor']
+            tick = math.ceil(tick/bar_tick)*bar_tick
+            tick += ts['tick_anchor']
         tick += bar_tick
 
 

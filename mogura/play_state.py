@@ -241,7 +241,7 @@ class PlayState(note_state.NoteState):
         self.runtime.midi_player.channel_to_volume_dict[15] = self.runtime.beat_vol
         self.runtime.midi_player.play(play_track_data['noteev_list'],self.loop_sec,self.start_sec,self.start_sec-2)
 
-        if self.runtime.config['audio_output_enabled'] and (time_multiplier == 1):
+        if (audio_data is not None) and self.runtime.config['audio_output_enabled'] and (time_multiplier == 1):
             audio_start_sample = round(midi_data.tempo_conv(0, 'tick', 'audiosample', play_track_data['tempo_list']))
             audio_end_sample = round(midi_data.tempo_conv(tick_30, 'tick', 'audiosample', play_track_data['tempo_list']))
             self.runtime.audio_output.play(audio_data, audio_start_sample, audio_end_sample, self.start_sec)
