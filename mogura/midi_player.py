@@ -34,7 +34,11 @@ class MidiPlayer:
         assert(beat_start_sec<=main_start_sec)
         for noteev in noteev_list:
             assert(noteev['sec']>=0)
-            assert(noteev['sec']<loop_sec)
+            # assert(noteev['sec']<loop_sec)
+            if noteev['sec']>=loop_sec:
+                print(f'noteev={noteev}')
+                print(f'loop_sec={loop_sec}')
+                assert(False)
 
         main_start_sec += DELAY_CORRECT_SEC
         beat_start_sec += DELAY_CORRECT_SEC

@@ -182,8 +182,23 @@ class PlayState(note_state.NoteState):
         play_track_data = midi_data.track_data_chop_tick(play_track_data, *play_tick_list)
         play_track_data = midi_data.track_data_move_tick(play_track_data, -play_tick_list[0])
         # play_track_data = midi_data.track_data_move_sec(play_track_data, -play_sec_list[0])
+        tempo = play_track_data['tempo_list']
+        tempo = filter(lambda i:i['tick0']==0,tempo)
+        tempo = list(tempo)
+        assert(len(tempo)==1)
+        tempo = tempo[0]
+        temposec0 = tempo['temposec0']
+        orisec0 = tempo['orisec0']
+        for tempo in play_track_data['tempo_list']:
+            tempo['temposec0'] -= temposec0
+            tempo['temposec1'] -= temposec0
+            tempo['orisec0'] -= orisec0
+            tempo['orisec1'] -= orisec0
         
         tick_30    = play_tick_list[3]-play_tick_list[0]
+        print(f'HROZACWPTJ tick_30={tick_30}')
+
+
         # sec_30 = play_sec_list[3]-play_sec_list[0]
         #print(f'YDXUFZLYQK tick_30={tick_30}, sec_30={sec_30}, play_tick_list={play_tick_list}, play_sec_list={play_sec_list}')
         display_track_data = copy.deepcopy(play_track_data)
@@ -212,8 +227,13 @@ class PlayState(note_state.NoteState):
 
         play_track_data = midi_data.track_data_add_woodblock(play_track_data, 0, tick_30)
 
+        # debug check
+        for noteev in play_track_data['noteev_list']:
+            assert(noteev['tick']>=0)
+            assert(noteev['tick']<tick_30)
+
         audio_data = copy.deepcopy(self.runtime.midi_data['audio_data'])
-        audio_data = midi_data.audio_data_move_tick(audio_data, -play_tick_list[0])
+        # audio_data = midi_data.audio_data_move_tick(audio_data, -play_tick_list[0])
 
         time_multiplier = self.runtime.time_multiplier()
         # play_track_data = midi_data.track_data_time_multiply(play_track_data, time_multiplier)
@@ -230,7 +250,9 @@ class PlayState(note_state.NoteState):
         self.runtime.midi_player.play(play_track_data['noteev_list'],self.loop_sec,self.start_sec,self.start_sec-2)
 
         if self.runtime.config['audio_output_enabled'] and (time_multiplier == 1):
-            self.runtime.audio_output.play(audio_data, self.loop_sec, self.start_sec)
+            audio_start_sample = round(midi_data.tick_to_audiosample(0, play_track_data['tempo_list']))
+            audio_end_sample = round(midi_data.tick_to_audiosample(tick_30, play_track_data['tempo_list']))
+            self.runtime.audio_output.play(audio_data, audio_start_sample, audio_end_sample, self.start_sec)
 
         self.audio_input_enabled = self.runtime.config['audio_input_enabled']
         if self.audio_input_enabled:

@@ -24,6 +24,7 @@ def json_path_to_data(file_path):
     sheet_path = os.path.join(os.path.dirname(file_path),sheet_path)
 
     ret = mid_to_data(mido.MidiFile(sheet_path))
+
     ret['audio_data'] = {}
     ret['audio_data']['timestamp_list'] = json_data['TIMESTAMP_LIST']
 
@@ -33,6 +34,17 @@ def json_path_to_data(file_path):
     audio_bytes = audio_np.tobytes()
     ret['audio_data']['data'] = audio_bytes
     ret['audio_data']['SAMPLE_RATE'] = audio_sr
+
+    for track_list in ret['track_list']:
+        tempo_list = track_list['tempo_list']
+        timestamp_list = copy.deepcopy(json_data['TIMESTAMP_LIST'])
+        for timestamp in timestamp_list:
+            timestamp['temposec'] = tick_to_temposec(timestamp['SHEET_TICK'], tempo_list)
+        for tempo in tempo_list:
+            tempo['audiosample0'] = temposec_to_sample(tempo['temposec0'], timestamp_list)
+            tempo['audiosample1'] = temposec_to_sample(tempo['temposec1'], timestamp_list)
+            tempo['orisec0'] = tempo['audiosample0']/audio_sr
+            tempo['orisec1'] = tempo['audiosample1']/audio_sr
 
     return ret
 
@@ -494,16 +506,20 @@ def merge_track_data(src_track_data_list, tick_list):
         tempo = src_tempo_list_list[i][-1]
         temposec = (tick-tempo['tick0'])*(tempo['temposec1']-tempo['temposec0'])/(tempo['tick1']-tempo['tick0'])+tempo['temposec0']
         orisec = (tick-tempo['tick0'])*(tempo['orisec1']-tempo['orisec0'])/(tempo['tick1']-tempo['tick0'])+tempo['orisec0']
+        audiosample = (tick-tempo['tick0'])*(tempo['audiosample1']-tempo['audiosample0'])/(tempo['tick1']-tempo['tick0'])+tempo['audiosample0']
         tempo['tick1'] = tick
         tempo['temposec1'] = temposec
         tempo['orisec1'] = orisec
+        tempo['audiosample1'] = audiosample
 
         tempo = src_tempo_list_list[i+1][0]
         temposec = (tick-tempo['tick0'])*(tempo['temposec1']-tempo['temposec0'])/(tempo['tick1']-tempo['tick0'])+tempo['temposec0']
         orisec = (tick-tempo['tick0'])*(tempo['orisec1']-tempo['orisec0'])/(tempo['tick1']-tempo['tick0'])+tempo['orisec0']
+        audiosample = (tick-tempo['tick0'])*(tempo['audiosample1']-tempo['audiosample0'])/(tempo['tick1']-tempo['tick0'])+tempo['audiosample0']
         tempo['tick0'] = tick
         tempo['temposec0'] = temposec
         tempo['orisec0'] = orisec
+        tempo['audiosample0'] = audiosample
 
     out_tempo_list = itertools.chain(*src_tempo_list_list)
     out_tempo_list = list(out_tempo_list)
@@ -766,20 +782,34 @@ def track_data_cal_ppitch(track_data, dpitch):
     track_data['ppitch0'] = track_data['opitch0'] + dpitch
     track_data['ppitch1'] = track_data['opitch1'] + dpitch
 
-def audio_tick_to_sec(tick, audio_data):
-    timestamp_list = audio_data['timestamp_list']
+# def audio_tick_to_sec(tick, audio_data):
+#     timestamp_list = audio_data['timestamp_list']
+#     for i in range(len(timestamp_list)-1):
+#         timestamp0 = timestamp_list[i]
+#         timestamp1 = timestamp_list[i+1]
+#         if tick < timestamp_list[i+1]['SHEET_TICK']:
+#             break
+#     tick0 = timestamp0['SHEET_TICK']
+#     tick1 = timestamp1['SHEET_TICK']
+#     sample0 = timestamp0['AUDIO_SAMPLE']
+#     sample1 = timestamp1['AUDIO_SAMPLE']
+#     sample = sample0 + (sample1-sample0)*(tick-tick0)/(tick1-tick0)
+#     sec = sample/audio_data['SAMPLE_RATE']
+#     return sec
+
+def temposec_to_sample(temposec, timestamp_list):
     for i in range(len(timestamp_list)-1):
         timestamp0 = timestamp_list[i]
         timestamp1 = timestamp_list[i+1]
-        if tick < timestamp_list[i+1]['SHEET_TICK']:
+        if temposec < timestamp_list[i+1]['temposec']:
             break
-    tick0 = timestamp0['SHEET_TICK']
-    tick1 = timestamp1['SHEET_TICK']
+    temposec0 = timestamp0['temposec']
+    temposec1 = timestamp1['temposec']
     sample0 = timestamp0['AUDIO_SAMPLE']
     sample1 = timestamp1['AUDIO_SAMPLE']
-    sample = sample0 + (sample1-sample0)*(tick-tick0)/(tick1-tick0)
-    sec = sample/audio_data['SAMPLE_RATE']
-    return sec
+    sample = sample0 + (sample1-sample0)*(temposec-temposec0)/(temposec1-temposec0)
+    return sample
+
 
 def audio_data_move_tick(audio_data, tick_diff):
     if audio_data is None:
@@ -789,3 +819,17 @@ def audio_data_move_tick(audio_data, tick_diff):
     for timestamp in timestamp_list:
         timestamp['SHEET_TICK'] += tick_diff
     return out_audio_data
+
+def tick_to_temposec(tick, tempo_list):
+    for tempo in tempo_list:
+        if tempo['tick0'] <= tick:
+            break
+    temposec = (tick-tempo['tick0'])*(tempo['temposec1']-tempo['temposec0'])/(tempo['tick1']-tempo['tick0'])+tempo['temposec0']
+    return temposec
+
+def tick_to_audiosample(tick, tempo_list):
+    for tempo in tempo_list:
+        if tempo['tick0'] <= tick:
+            break
+    temposec = (tick-tempo['tick0'])*(tempo['audiosample1']-tempo['audiosample0'])/(tempo['tick1']-tempo['tick0'])+tempo['audiosample0']
+    return temposec

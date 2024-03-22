@@ -20,7 +20,7 @@ class AudioOutput(object):
         self.stream_callback_list = []
 
         self.audio_data = None
-        self.loop_sec = None
+        # self.loop_sec = None
         self.start_sec = None
 
         self.frame0 = None
@@ -28,7 +28,7 @@ class AudioOutput(object):
         self.frame_diff = None
         self.frame_done = None
 
-    def play(self, audio_data, loop_sec, start_sec):
+    def play(self, audio_data, audio_start_sample, audio_end_sample, start_sec):
         print('Starting audio output...')
         assert(self._audio_stream is None)
         assert(self._audio_interface is None)
@@ -42,13 +42,14 @@ class AudioOutput(object):
             return False
         
         self.audio_data = audio_data
-        self.loop_sec = loop_sec
+        # self.loop_sec = loop_sec
         self.start_sec = start_sec
 
-        sec0 = midi_data.audio_tick_to_sec(0, self.audio_data)
-        sec1 = sec0 + loop_sec
-        self.frame0 = round(sec0*self.audio_data['SAMPLE_RATE'])
-        self.frame1 = round(sec1*self.audio_data['SAMPLE_RATE'])
+        # sec0 = midi_data.audio_tick_to_sec(0, self.audio_data)
+        # sec0 = audio_start_sec
+        # sec1 = sec0 + loop_sec
+        self.frame0 = audio_start_sample
+        self.frame1 = audio_end_sample
         self.frame_diff = self.frame1 - self.frame0
         self.frame_done = None
 
@@ -90,7 +91,7 @@ class AudioOutput(object):
             self._audio_interface = None
 
         self.audio_data = None
-        self.loop_sec = None
+        # self.loop_sec = None
         self.start_sec = None
 
         self.frame0 = None
