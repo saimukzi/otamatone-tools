@@ -40,6 +40,10 @@ def json_path_to_data(file_path):
 def midi_path_to_data(file_path):
     ret = mid_to_data(mido.MidiFile(file_path))
     ret['audio_data'] = None
+    for track in ret['track_list']:
+        for tempo in track['tempo_list']:
+            tempo['orisec0'] = tempo['temposec0']
+            tempo['orisec1'] = tempo['temposec1']
     return ret
 
 
@@ -217,6 +221,13 @@ def track_to_tempo_list(track,ticks_per_beat):
     ret_tempo_list = filter(lambda i:i['tick0']<i['tick1'],ret_tempo_list)
     ret_tempo_list = list(ret_tempo_list)
     # ret_tempo_list[0]['tick0'] = -INF
+
+    temposec = 0
+    for tempo in ret_tempo_list:
+        tempo['temposec0'] = temposec
+        tick = tempo['tick1']-tempo['tick0']
+        temposec += tick*tempo['tempo']/1000000/ticks_per_beat
+        tempo['temposec1'] = temposec
     
     _check_tempo_list(ret_tempo_list)
     
@@ -476,11 +487,40 @@ def merge_track_data(src_track_data_list, tick_list):
     for src_tempo_list in src_tempo_list_list:
         #print(src_tempo_list)
         _check_tempo_list(src_tempo_list)
+
     for i in range(len(tick_list)):
-        src_tempo_list_list[i][-1]['tick1'] = tick_list[i]
-        src_tempo_list_list[i+1][0]['tick0'] = tick_list[i]
+        tick = tick_list[i]
+
+        tempo = src_tempo_list_list[i][-1]
+        temposec = (tick-tempo['tick0'])*(tempo['temposec1']-tempo['temposec0'])/(tempo['tick1']-tempo['tick0'])+tempo['temposec0']
+        orisec = (tick-tempo['tick0'])*(tempo['orisec1']-tempo['orisec0'])/(tempo['tick1']-tempo['tick0'])+tempo['orisec0']
+        tempo['tick1'] = tick
+        tempo['temposec1'] = temposec
+        tempo['orisec1'] = orisec
+
+        tempo = src_tempo_list_list[i+1][0]
+        temposec = (tick-tempo['tick0'])*(tempo['temposec1']-tempo['temposec0'])/(tempo['tick1']-tempo['tick0'])+tempo['temposec0']
+        orisec = (tick-tempo['tick0'])*(tempo['orisec1']-tempo['orisec0'])/(tempo['tick1']-tempo['tick0'])+tempo['orisec0']
+        tempo['tick0'] = tick
+        tempo['temposec0'] = temposec
+        tempo['orisec0'] = orisec
+
     out_tempo_list = itertools.chain(*src_tempo_list_list)
     out_tempo_list = list(out_tempo_list)
+
+    temposec = 0
+    orisec = 0
+    for tempo in out_tempo_list:
+        temposec_diff = tempo['temposec1']-tempo['temposec0']
+        tempo['temposec0'] = temposec
+        temposec += temposec_diff
+        tempo['temposec1'] = temposec
+
+        orisec_diff = tempo['orisec1']-tempo['orisec0']
+        tempo['orisec0'] = orisec
+        orisec += orisec_diff
+        tempo['orisec1'] = orisec
+
     _check_tempo_list(out_tempo_list)
     #src_tempo_list = sorted(src_tempo_list, key=_tempo_sort_key)
     #print(json.dumps(tempo_list,indent=2))
@@ -536,46 +576,45 @@ def merge_track_data(src_track_data_list, tick_list):
 #     return out_track_data
 
 
-def fill_sec(track_data, time_multiplier, audio_data):
+def fill_sec(track_data, time_multiplier):
     track_data['time_multiplier'] = time_multiplier
-    ticks_per_beat = track_data['ticks_per_beat']
+    # ticks_per_beat = track_data['ticks_per_beat']
     tempo_list = track_data['tempo_list']
     _check_tempo_list(tempo_list)
-    sec = 0
-    tick = 0
 
     # debug
     print('fill_sec START')
     for tempo in tempo_list:
         print(tempo)
 
-    tick0_sec = None
+    # tick0_sec = None
     for tempo in tempo_list:
-        if tempo['tick0'] == 0: tick0_sec = sec
-        tempo['sec0'] = sec
+        # if tempo['tick0'] == 0: tick0_sec = sec
+        tempo['sec0'] = tempo['orisec0']*time_multiplier
+        tempo['sec1'] = tempo['orisec1']*time_multiplier
         # tempo['tick_anchor'] = tick
         # tempo['sec_anchor'] = sec
-        tick_inc = tempo['tick1']-tempo['tick0']
-        if (audio_data is not None) and (time_multiplier == 1):
-            sec0 = audio_tick_to_sec(tempo['tick0'], audio_data)
-            sec1 = audio_tick_to_sec(tempo['tick1'], audio_data)
-            sec_inc = sec1-sec0
-            # tempo['sec_per_tick'] = sec_inc/tick_inc
-            tick += tick_inc
-            sec += sec_inc
-            tempo['sec1'] = sec
-        else:
-            sec_per_tick = tempo['tempo']*time_multiplier/ticks_per_beat/1000000
-            # tempo['sec_per_tick'] = sec_per_tick
-            sec_inc = tick_inc*sec_per_tick
-            tick += tick_inc
-            sec += sec_inc
-            tempo['sec1'] = sec
+        # tick_inc = tempo['tick1']-tempo['tick0']
+        # if (audio_data is not None) and (time_multiplier == 1):
+        #     sec0 = audio_tick_to_sec(tempo['tick0'], audio_data)
+        #     sec1 = audio_tick_to_sec(tempo['tick1'], audio_data)
+        #     sec_inc = sec1-sec0
+        #     # tempo['sec_per_tick'] = sec_inc/tick_inc
+        #     tick += tick_inc
+        #     sec += sec_inc
+        #     tempo['sec1'] = sec
+        # else:
+        #     sec_per_tick = tempo['tempo']*time_multiplier/ticks_per_beat/1000000
+        #     # tempo['sec_per_tick'] = sec_per_tick
+        #     sec_inc = tick_inc*sec_per_tick
+        #     tick += tick_inc
+        #     sec += sec_inc
+        #     tempo['sec1'] = sec
 
-    assert(tick0_sec is not None)
-    for tempo in tempo_list:
-        tempo['sec0'] -= tick0_sec
-        tempo['sec1'] -= tick0_sec
+    # assert(tick0_sec is not None)
+    # for tempo in tempo_list:
+    #     tempo['sec0'] -= tick0_sec
+    #     tempo['sec1'] -= tick0_sec
 
     for noteev in track_data['noteev_list']:
         if 'tick'  in noteev: noteev['sec']  = tick_to_sec(noteev['tick'],  tempo_list)
@@ -713,6 +752,12 @@ def _check_tempo_list(tempo_list):
     #     tick = tempo['tick1']-tempo['tick0']
     for i in range(len(tempo_list)-1):
         assert(tempo_list[i]['tick1']==tempo_list[i+1]['tick0'])
+        if ('sec1' in tempo_list[i]) or ('sec0' in tempo_list[i+1]):
+            assert(tempo_list[i]['sec1']==tempo_list[i+1]['sec0'])
+        if ('temposec1' in tempo_list[i]) or ('temposec0' in tempo_list[i+1]):
+            assert(tempo_list[i]['temposec1']==tempo_list[i+1]['temposec0'])
+        if ('orisec1' in tempo_list[i]) or ('orisec0' in tempo_list[i+1]):
+            assert(tempo_list[i]['orisec1']==tempo_list[i+1]['orisec0'])
 
 def track_data_cal_ppitch(track_data, dpitch):
     for noteev in track_data['noteev_list']:

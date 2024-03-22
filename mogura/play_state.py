@@ -197,6 +197,18 @@ class PlayState(note_state.NoteState):
         # for dm in display_track_data['noteev_list']:  dm['src']='1'
         # for dm in display_track_data1['noteev_list']: dm['src']='2'
         display_track_data = midi_data.merge_track_data([display_track_data0,display_track_data,display_track_data1],[0,tick_30])
+        tempo = display_track_data['tempo_list']
+        tempo = filter(lambda i:i['tick0']==0,tempo)
+        tempo = list(tempo)
+        assert(len(tempo)==1)
+        tempo = tempo[0]
+        temposec0 = tempo['temposec0']
+        orisec0 = tempo['orisec0']
+        for tempo in display_track_data['tempo_list']:
+            tempo['temposec0'] -= temposec0
+            tempo['temposec1'] -= temposec0
+            tempo['orisec0'] -= orisec0
+            tempo['orisec1'] -= orisec0
 
         play_track_data = midi_data.track_data_add_woodblock(play_track_data, 0, tick_30)
 
@@ -206,8 +218,8 @@ class PlayState(note_state.NoteState):
         time_multiplier = self.runtime.time_multiplier()
         # play_track_data = midi_data.track_data_time_multiply(play_track_data, time_multiplier)
         # display_track_data = midi_data.track_data_time_multiply(display_track_data, time_multiplier)
-        midi_data.fill_sec(play_track_data, time_multiplier, audio_data)
-        midi_data.fill_sec(display_track_data, time_multiplier, audio_data)
+        midi_data.fill_sec(play_track_data, time_multiplier)
+        midi_data.fill_sec(display_track_data, time_multiplier)
         self.track_data = display_track_data
         self.loop_sec =   midi_data.tick_to_sec(tick_30, play_track_data['tempo_list']) \
                         - midi_data.tick_to_sec(0, play_track_data['tempo_list'])
