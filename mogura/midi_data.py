@@ -549,7 +549,9 @@ def fill_sec(track_data, time_multiplier, audio_data):
     for tempo in tempo_list:
         print(tempo)
 
+    tick0_sec = None
     for tempo in tempo_list:
+        if tempo['tick0'] == 0: tick0_sec = sec
         tempo['sec0'] = sec
         # tempo['tick_anchor'] = tick
         # tempo['sec_anchor'] = sec
@@ -569,6 +571,11 @@ def fill_sec(track_data, time_multiplier, audio_data):
             tick += tick_inc
             sec += sec_inc
             tempo['sec1'] = sec
+
+    assert(tick0_sec is not None)
+    for tempo in tempo_list:
+        tempo['sec0'] -= tick0_sec
+        tempo['sec1'] -= tick0_sec
 
     for noteev in track_data['noteev_list']:
         if 'tick'  in noteev: noteev['sec']  = tick_to_sec(noteev['tick'],  tempo_list)
