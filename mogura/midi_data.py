@@ -558,13 +558,13 @@ def fill_sec(track_data, time_multiplier, audio_data):
             sec0 = audio_tick_to_sec(tempo['tick0'], audio_data)
             sec1 = audio_tick_to_sec(tempo['tick1'], audio_data)
             sec_inc = sec1-sec0
-            tempo['sec_per_tick'] = sec_inc/tick_inc
+            # tempo['sec_per_tick'] = sec_inc/tick_inc
             tick += tick_inc
             sec += sec_inc
             tempo['sec1'] = sec
         else:
             sec_per_tick = tempo['tempo']*time_multiplier/ticks_per_beat/1000000
-            tempo['sec_per_tick'] = sec_per_tick
+            # tempo['sec_per_tick'] = sec_per_tick
             sec_inc = tick_inc*sec_per_tick
             tick += tick_inc
             sec += sec_inc
