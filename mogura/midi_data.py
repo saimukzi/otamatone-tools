@@ -39,7 +39,8 @@ def json_path_to_data(file_path):
         tempo_list = track_list['tempo_list']
         timestamp_list = copy.deepcopy(json_data['TIMESTAMP_LIST'])
         for timestamp in timestamp_list:
-            timestamp['temposec'] = tick_to_temposec(timestamp['SHEET_TICK'], tempo_list)
+            # timestamp['temposec'] = tick_to_temposec(timestamp['SHEET_TICK'], tempo_list)
+            timestamp['temposec'] = tempo_conv(timestamp['SHEET_TICK'], 'tick', 'temposec', tempo_list)
         for tempo in tempo_list:
             tempo['audiosample0'] = temposec_to_sample(tempo['temposec0'], timestamp_list)
             tempo['audiosample1'] = temposec_to_sample(tempo['temposec1'], timestamp_list)
@@ -600,8 +601,8 @@ def fill_sec(track_data, time_multiplier):
 
     # debug
     print('fill_sec START')
-    for tempo in tempo_list:
-        print(tempo)
+    # for tempo in tempo_list:
+    #     print(tempo)
 
     # tick0_sec = None
     for tempo in tempo_list:
@@ -638,8 +639,8 @@ def fill_sec(track_data, time_multiplier):
         if 'tick1' in noteev: noteev['sec1'] = tick_to_sec(noteev['tick1'], tempo_list)
     # debug
     print('fill_sec END')
-    for tempo in tempo_list:
-        print(tempo)
+    # for tempo in tempo_list:
+    #     print(tempo)
 
 def track_data_add_woodblock(track_data, start_tick, end_tick):
     out_track_data = copy.deepcopy(track_data)
@@ -820,16 +821,29 @@ def audio_data_move_tick(audio_data, tick_diff):
         timestamp['SHEET_TICK'] += tick_diff
     return out_audio_data
 
-def tick_to_temposec(tick, tempo_list):
-    for tempo in tempo_list:
-        if tempo['tick0'] <= tick:
-            break
-    temposec = (tick-tempo['tick0'])*(tempo['temposec1']-tempo['temposec0'])/(tempo['tick1']-tempo['tick0'])+tempo['temposec0']
-    return temposec
+# def tick_to_temposec(tick, tempo_list):
+#     for tempo in tempo_list:
+#         if tempo['tick0'] <= tick:
+#             break
+#     temposec = (tick-tempo['tick0'])*(tempo['temposec1']-tempo['temposec0'])/(tempo['tick1']-tempo['tick0'])+tempo['temposec0']
+#     return temposec
 
-def tick_to_audiosample(tick, tempo_list):
+# def tick_to_audiosample(tick, tempo_list):
+#     for tempo in tempo_list:
+#         if tempo['tick0'] <= tick:
+#             break
+#     temposec = (tick-tempo['tick0'])*(tempo['audiosample1']-tempo['audiosample0'])/(tempo['tick1']-tempo['tick0'])+tempo['audiosample0']
+#     return temposec
+
+
+def tempo_conv(v, unit_from, unit_to, tempo_list):
+    from0 = unit_from+'0'
+    from1 = unit_from+'1'
+    to0 = unit_to+'0'
+    to1 = unit_to+'1'
+
     for tempo in tempo_list:
-        if tempo['tick0'] <= tick:
+        if tempo[from1] > v:
             break
-    temposec = (tick-tempo['tick0'])*(tempo['audiosample1']-tempo['audiosample0'])/(tempo['tick1']-tempo['tick0'])+tempo['audiosample0']
-    return temposec
+    ret = (v-tempo[from0])*(tempo[to1]-tempo[to0])/(tempo[from1]-tempo[from0])+tempo[to0]
+    return ret

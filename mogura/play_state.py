@@ -182,13 +182,9 @@ class PlayState(note_state.NoteState):
         play_track_data = midi_data.track_data_chop_tick(play_track_data, *play_tick_list)
         play_track_data = midi_data.track_data_move_tick(play_track_data, -play_tick_list[0])
         # play_track_data = midi_data.track_data_move_sec(play_track_data, -play_sec_list[0])
-        tempo = play_track_data['tempo_list']
-        tempo = filter(lambda i:i['tick0']==0,tempo)
-        tempo = list(tempo)
-        assert(len(tempo)==1)
-        tempo = tempo[0]
-        temposec0 = tempo['temposec0']
-        orisec0 = tempo['orisec0']
+
+        temposec0 = midi_data.tempo_conv(0, 'tick', 'temposec', play_track_data['tempo_list'])
+        orisec0 = midi_data.tempo_conv(0, 'tick', 'orisec', play_track_data['tempo_list'])
         for tempo in play_track_data['tempo_list']:
             tempo['temposec0'] -= temposec0
             tempo['temposec1'] -= temposec0
@@ -212,13 +208,9 @@ class PlayState(note_state.NoteState):
         # for dm in display_track_data['noteev_list']:  dm['src']='1'
         # for dm in display_track_data1['noteev_list']: dm['src']='2'
         display_track_data = midi_data.merge_track_data([display_track_data0,display_track_data,display_track_data1],[0,tick_30])
-        tempo = display_track_data['tempo_list']
-        tempo = filter(lambda i:i['tick0']==0,tempo)
-        tempo = list(tempo)
-        assert(len(tempo)==1)
-        tempo = tempo[0]
-        temposec0 = tempo['temposec0']
-        orisec0 = tempo['orisec0']
+
+        temposec0 = midi_data.tempo_conv(0, 'tick', 'temposec', display_track_data['tempo_list'])
+        orisec0 = midi_data.tempo_conv(0, 'tick', 'orisec', display_track_data['tempo_list'])
         for tempo in display_track_data['tempo_list']:
             tempo['temposec0'] -= temposec0
             tempo['temposec1'] -= temposec0
@@ -250,8 +242,8 @@ class PlayState(note_state.NoteState):
         self.runtime.midi_player.play(play_track_data['noteev_list'],self.loop_sec,self.start_sec,self.start_sec-2)
 
         if self.runtime.config['audio_output_enabled'] and (time_multiplier == 1):
-            audio_start_sample = round(midi_data.tick_to_audiosample(0, play_track_data['tempo_list']))
-            audio_end_sample = round(midi_data.tick_to_audiosample(tick_30, play_track_data['tempo_list']))
+            audio_start_sample = round(midi_data.tempo_conv(0, 'tick', 'audiosample', play_track_data['tempo_list']))
+            audio_end_sample = round(midi_data.tempo_conv(tick_30, 'tick', 'audiosample', play_track_data['tempo_list']))
             self.runtime.audio_output.play(audio_data, audio_start_sample, audio_end_sample, self.start_sec)
 
         self.audio_input_enabled = self.runtime.config['audio_input_enabled']

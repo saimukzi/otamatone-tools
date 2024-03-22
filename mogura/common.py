@@ -3,6 +3,7 @@ import json
 PHI = (1+5**0.5)/2 
 A4_FREQ = 440
 A4_PITCH = 69
+EPSILON = 1e-6
 
 def anchor(xy, size, anc):
     x,y = xy

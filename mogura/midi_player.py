@@ -1,4 +1,5 @@
 import copy
+import common
 import math
 import time
 import rtmidi
@@ -33,12 +34,18 @@ class MidiPlayer:
     def play(self,noteev_list,loop_sec,main_start_sec,beat_start_sec):
         assert(beat_start_sec<=main_start_sec)
         for noteev in noteev_list:
-            assert(noteev['sec']>=0)
+            noteev['sec'] = max(noteev['sec'],0)
+            noteev['sec'] = min(noteev['sec'],loop_sec-common.EPSILON)
+            # assert(noteev['sec']>=0)
+            # if noteev['sec']<0:
+                # print(f'noteev={noteev}')
+                # assert(False)
+                # noteev['sec'] = 0
             # assert(noteev['sec']<loop_sec)
-            if noteev['sec']>=loop_sec:
-                print(f'noteev={noteev}')
-                print(f'loop_sec={loop_sec}')
-                assert(False)
+            # if noteev['sec']>=loop_sec:
+                # print(f'noteev={noteev}')
+                # print(f'loop_sec={loop_sec}')
+                # assert(False)
 
         main_start_sec += DELAY_CORRECT_SEC
         beat_start_sec += DELAY_CORRECT_SEC
