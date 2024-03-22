@@ -61,7 +61,7 @@ class PlayState(note_state.NoteState):
                     v *= 50
                     screen.fill(
                         # rect=(self.freq_pp0_list[i],self.matric_aim_tt,self.freq_pp1_list[i],v),
-                        ret = self.ppttrect_to_xyrect(self.freq_pp0_list[i],self.matric_aim_tt,self.freq_pp1_list[i],self.matric_aim_tt+v),
+                        rect = self.ppttrect_to_xyrect((self.freq_pp0_list[i],self.matric_aim_tt,self.freq_pp1_list[i],self.matric_aim_tt+v)),
                         color=(63,63,63,255),
                     )
 
