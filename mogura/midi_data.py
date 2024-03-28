@@ -88,6 +88,18 @@ def track_to_data(track,ticks_per_beat):
     opitch0 = min(opitch0)
     track_data['opitch0'] = opitch0
 
+    notetick0 = track_data['noteev_list']
+    notetick0 = filter(lambda i:i['type']=='on',notetick0)
+    notetick0 = map(lambda i:i['tick0'],notetick0)
+    notetick0 = min(notetick0)
+    track_data['notetick0'] = notetick0
+
+    notetick1 = track_data['noteev_list']
+    notetick1 = filter(lambda i:i['type']=='on',notetick1)
+    notetick1 = map(lambda i:i['tick1'],notetick1)
+    notetick1 = max(notetick1)
+    track_data['notetick1'] = notetick1
+
     tick1 = track_to_end_tick(track)
     if tick1 is None:
         tick1 = last_bar_tick(track_data)

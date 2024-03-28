@@ -11,6 +11,7 @@ import config_state
 import edit_state
 import edit_state
 import freq_timer
+import math
 import midi_data
 import midi_player
 import null_state
@@ -139,10 +140,40 @@ class Runtime:
     def open_file(self, file_path):
         self.dpitch = 0
         self.midi_data = midi_data.path_to_data(file_path)
-        self.play_beat_list[0] = 0
-        self.play_beat_list[1] = 0
-        self.play_beat_list[2] = self.midi_data['track_list'][0]['tick1'] // self.midi_data['ticks_per_beat']
-        self.play_beat_list[3] = self.play_beat_list[2]
+
+        tpb = self.midi_data['track_list'][0]['ticks_per_beat']
+        time_signature_list = self.midi_data['track_list'][0]['time_signature_list']
+
+        tick = self.midi_data['track_list'][0]['notetick0']
+        for tsi in range(len(time_signature_list)):
+            ts = time_signature_list[tsi]
+            if ts['tick1'] >= tick: # use gte
+                break
+        bar_tick = midi_data.get_bar_tick(ts, tpb)
+        tick -= ts['tick_anchor']
+        tick = math.floor(tick/bar_tick)*bar_tick
+        tick += ts['tick_anchor']
+        beat0 = tick // tpb
+        beat0 -= 4*ts['numerator']//ts['denominator']
+
+        tick = self.midi_data['track_list'][0]['notetick1']
+        for tsi in range(len(time_signature_list)):
+            ts = time_signature_list[tsi]
+            if ts['tick1'] > tick: # use gt
+                break
+        bar_tick = midi_data.get_bar_tick(ts, tpb)
+        tick -= ts['tick_anchor']
+        tick = math.ceil(tick/bar_tick)*bar_tick
+        tick += ts['tick_anchor']
+        beat1 = tick // tpb
+        beat1 += 4*ts['numerator']//ts['denominator']
+
+        self.play_beat_list[0] = beat0
+        self.play_beat_list[1] = beat0
+        # self.play_beat_list[2] = self.midi_data['track_list'][0]['tick1'] // self.midi_data['ticks_per_beat']
+        # self.play_beat_list[3] = self.play_beat_list[2]
+        self.play_beat_list[2] = beat1
+        self.play_beat_list[3] = beat1
         self.state_pool.set_active('EDIT')
         midi_data.track_data_cal_ppitch(self.midi_data['track_list'][0], self.dpitch)
         self.state_pool.on_midi_update()
