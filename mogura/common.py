@@ -19,5 +19,5 @@ def anchor(xy, size, anc):
     return (x+dx,y+dy)
 
 def json_path_to_data(path):
-    with open(path) as f:
+    with open(path, encoding='utf8') as f:
         return json.load(f)
