@@ -48,6 +48,7 @@ class NoteState(null_state.NullState):
         self.draw_time_line_thin(draw_session)
         self.draw_note_rail_ppitch_line(draw_session)
         self.draw_time_line_thick(draw_session)
+        self.draw_key_signature(draw_session)
         self.draw_note_signal(draw_session)
 
     def get_draw_session(self, screen, vision_offset_tt):
@@ -171,6 +172,42 @@ class NoteState(null_state.NullState):
                 rect=self.ppttrect_to_xyrect((pp0,tt0,pp1,tt1)),
                 color=(128,128,128,255),
             )
+
+    def draw_key_signature(self, draw_session):
+        screen = draw_session['screen']
+        track_data = draw_session['track_data']
+        vision_offset_tt = draw_session['vision_offset_tt']
+        min_tick = draw_session['min_tick']
+        max_tick = draw_session['max_tick']
+
+        key_signature_list = track_data['key_signature_list']
+        key_signature_list = filter(lambda i:i['tick0']>min_tick,key_signature_list)
+        key_signature_list = filter(lambda i:i['tick0']<max_tick,key_signature_list)
+        key_signature_list = list(key_signature_list)
+        for key_signature in key_signature_list:
+            key = key_signature['key']
+            if key is None: continue
+            tick = key_signature['tick0']
+            # y = round(self.tick_to_tt(tick,vision_offset_tt))
+            tt = round(self.tick_to_tt(tick,vision_offset_tt))
+            tt0 = tt-self.matric_cell_z//16
+            tt1 = tt0+self.matric_cell_z//8
+            for p in range(self.matric_ppitch0, self.matric_ppitch1+1, 1):
+                px = (p-key)%12
+                if px not in midi_data.MAIN_PITCH_SET: continue
+                pp = self.ppitch_to_pp(p)
+                pp0 = pp-self.matric_line0_z//2
+                pp1 = pp0+self.matric_line0_z
+                screen.fill(
+                    rect=self.ppttrect_to_xyrect((pp0,tt0,pp1,tt1)),
+                    color=(0,0,0,255),
+                )
+            # pp0 = self.matric_note_rail_pp_min
+            # pp1 = self.matric_note_rail_pp_max
+            # screen.fill(
+            #     rect=self.ppttrect_to_xyrect((pp0,tt0,pp1,tt1)),
+            #     color=(255,255,255,255),
+            # )
 
     def draw_note_signal(self, draw_session):
         screen = draw_session['screen']
@@ -462,4 +499,8 @@ class NoteState(null_state.NullState):
         x1,y1 = self.pptt_to_xy((pp1,tt1))
         x0,x1 = min(x0,x1),max(x0,x1)
         y0,y1 = min(y0,y1),max(y0,y1)
+        x0 = max(x0,0)
+        y0 = max(y0,0)
+        x1 = min(x1,self.matric_screen_size[0])
+        y1 = min(y1,self.matric_screen_size[1])
         return (x0,y0,x1-x0,y1-y0)

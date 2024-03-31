@@ -39,6 +39,7 @@ class PlayState(note_state.NoteState):
         vision_offset_tt %= self.loop_sec
         # print(f'sec={vision_offset_tt}')
         vision_offset_tt = midi_data.sec_to_tick(vision_offset_tt, self.track_data['tempo_list'])
+        current_tick = vision_offset_tt
         # print(f'tick={vision_offset_tt}')
         vision_offset_tt /= self.matric_ticks_per_beat
         vision_offset_tt *= self.matric_cell_z
@@ -46,6 +47,7 @@ class PlayState(note_state.NoteState):
         # self.draw_note_rail(screen, vision_offset_tt)
 
         draw_session = self.get_draw_session(screen, vision_offset_tt)
+        draw_session['current_tick'] = current_tick
 
         self.draw_color_note_rail_bg(draw_session)
         self.draw_note_length(draw_session)
@@ -68,6 +70,7 @@ class PlayState(note_state.NoteState):
         self.draw_time_line_thin(draw_session)
         self.draw_note_rail_ppitch_line(draw_session)
         self.draw_time_line_thick(draw_session)
+        self.draw_key_signature(draw_session)
         self.draw_note_signal(draw_session)
 
         screen.fill(
@@ -75,6 +78,8 @@ class PlayState(note_state.NoteState):
             rect=self.ppttrect_to_xyrect((0,self.matric_aim_tt,self.matric_screen_pp_max,self.matric_aim_tt+1)),
             color=(0,0,0),
         )
+
+        self.draw_current_key_signature(draw_session)
 
     def on_active(self):
 #        src_track_data = self.runtime.midi_data['track_list'][0]
@@ -298,3 +303,24 @@ class PlayState(note_state.NoteState):
     def event_tick(self, event, sec):
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             self.runtime.state_pool.set_active('EDIT')
+
+    def draw_current_key_signature(self, draw_session):
+        screen = draw_session['screen']
+        key_signature_list = self.track_data['key_signature_list']
+        for key_signature in key_signature_list:
+            if key_signature['tick1'] > draw_session['current_tick']:
+                break
+        key = key_signature['key']
+        if key is None: return
+        tt1 = self.matric_aim_tt
+        tt0 = tt1 - self.matric_cell_z//8
+        for p in range(self.matric_ppitch0, self.matric_ppitch1+1, 1):
+            px = (p-key)%12
+            if px not in midi_data.MAIN_PITCH_SET: continue
+            pp = self.ppitch_to_pp(p)
+            pp0 = pp-self.matric_line0_z//2
+            pp1 = pp0+self.matric_line0_z
+            screen.fill(
+                rect=self.ppttrect_to_xyrect((pp0,tt0,pp1,tt1)),
+                color=(63,63,63,255),
+            )

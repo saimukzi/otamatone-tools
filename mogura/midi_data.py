@@ -77,6 +77,7 @@ def track_to_data(track,ticks_per_beat):
 #    track_data['bar_set']    = set(track_data['bar_list'])
     track_data['time_signature_list'] = track_to_time_signature_list(track)
     track_data['tempo_list'] = track_to_tempo_list(track,ticks_per_beat)
+    track_data['key_signature_list'] = track_to_key_signature_list(track)
 
     opitch1 = track_data['noteev_list']
     opitch1 = map(lambda i:i['opitch'],opitch1)
@@ -259,6 +260,39 @@ def track_to_tempo_list(track,ticks_per_beat):
     return ret_tempo_list
 
 
+def track_to_key_signature_list(track):
+    key_signature_list = []
+    key_signature_list.append({
+        # 'numerator': 4,
+        # 'denominator': 4,
+        'key': None,
+        'tick0': 0,
+        # 'tick1': INF,
+        # 'tick_anchor':0,
+    })
+    tick = 0
+    for msg in track:
+        tick += msg.time
+        if msg.type != 'key_signature': continue
+        # print(msg)
+        key_signature_list[-1]['tick1'] = tick
+        key_signature_list.append({
+            # 'numerator': msg.numerator,
+            # 'denominator': msg.denominator,
+            'key': SIGNATURE_KEY_NAME_TO_DO_PITCH_DICT[msg.key],
+            'tick0': tick,
+        })
+
+    key_signature_list[-1]['tick1'] = tick
+    key_signature_list = list(filter(lambda i:i['tick0']<i['tick1'], key_signature_list))
+    # key_signature_list[0]['tick0'] = -INF
+    
+    # print(key_signature_list)
+    _check_key_signature_list(key_signature_list)
+
+    return key_signature_list
+
+
 def tick_to_sec(tick, tempo_list):
     #print(f'HGWHMWQKXA tick={tick}, tempo_list={tempo_list}')
     tempo = tempo_list
@@ -349,6 +383,13 @@ def track_data_chop_tick(track_data, start_bar_tick, start_note_tick, end_note_t
     _check_tempo_list(tempo_list)
     out_track_data['tempo_list'] = tempo_list
 
+    key_signature_list = out_track_data['key_signature_list']
+    key_signature_list = filter(lambda i:i['tick1']>start_bar_tick, key_signature_list)
+    key_signature_list = filter(lambda i:i['tick0']<end_bar_tick,   key_signature_list)
+    key_signature_list = list(key_signature_list)
+    _check_key_signature_list(key_signature_list)
+    out_track_data['key_signature_list'] = key_signature_list
+
     return out_track_data
 
 def _track_data_chop_time_noteev_filter(start_tick, end_tick):
@@ -420,6 +461,11 @@ def track_data_move_tick(track_data, tick_diff):
     for tempo in tempo_list:
         tempo['tick0'] += tick_diff
         tempo['tick1'] += tick_diff
+
+    key_signature_list = out_track_data['key_signature_list']
+    for key_signature in key_signature_list:
+        key_signature['tick0'] += tick_diff
+        key_signature['tick1'] += tick_diff
 
     return out_track_data
 
@@ -586,6 +632,17 @@ def merge_track_data(src_track_data_list, tick_list):
     #     out_tempo_list.append(src_tempo)
     #print(f'TVNNIFCPIK out_tempo_list={out_tempo_list}')
     output_track_data['tempo_list'] = out_tempo_list
+
+    src_key_signature_list_list = copy.deepcopy(list(map(lambda i:i['key_signature_list'],src_track_data_list)))
+    for src_key_signature_list in src_key_signature_list_list:
+        _check_key_signature_list(src_key_signature_list)
+    for i in range(len(tick_list)):
+        src_key_signature_list_list[i][-1]['tick1'] = tick_list[i]
+        src_key_signature_list_list[i+1][0]['tick0'] = tick_list[i]
+    key_signature_list = itertools.chain(*src_key_signature_list_list)
+    key_signature_list = list(key_signature_list)
+    _check_key_signature_list(key_signature_list)
+    output_track_data['key_signature_list'] = key_signature_list
 
     output_track_data['opitch1'] = max(map(lambda i:i['opitch1'],src_track_data_list))
     output_track_data['opitch0'] = min(map(lambda i:i['opitch0'],src_track_data_list))
@@ -798,6 +855,10 @@ def _check_tempo_list(tempo_list):
         if ('orisec1' in tempo_list[i]) or ('orisec0' in tempo_list[i+1]):
             assert(tempo_list[i]['orisec1']==tempo_list[i+1]['orisec0'])
 
+def _check_key_signature_list(key_signature_list):
+    for i in range(len(key_signature_list)-1):
+        assert(key_signature_list[i]['tick1']==key_signature_list[i+1]['tick0'])
+
 def track_data_cal_ppitch(track_data, dpitch):
     for noteev in track_data['noteev_list']:
         if noteev['usage'] == 'BEAT': continue
@@ -869,3 +930,31 @@ def tempo_conv(v, unit_from, unit_to, tempo_list):
             break
     ret = (v-tempo[from0])*(tempo[to1]-tempo[to0])/(tempo[from1]-tempo[from0])+tempo[to0]
     return ret
+
+ORI_NOTE_NAME_TO_PITCH_DICT = {
+    'C':  0,
+    'D':  2,
+    'E':  4,
+    'F':  5,
+    'G':  7,
+    'A':  9,
+    'B': 11,
+}
+_SUB0_TO_PITCH_DICT = {
+    'b':11,
+    '':0,
+    '#':1,
+}
+_SUB1_TO_PITCH_DICT = {
+    '': 0,
+    'm': 3
+}
+
+SIGNATURE_KEY_NAME_TO_DO_PITCH_DICT = {}
+for ori_note_name, pitch in ORI_NOTE_NAME_TO_PITCH_DICT.items():
+    for sub0, pitch0 in _SUB0_TO_PITCH_DICT.items():
+        for sub1, pitch1 in _SUB1_TO_PITCH_DICT.items():
+            SIGNATURE_KEY_NAME_TO_DO_PITCH_DICT[ori_note_name+sub0+sub1] = (pitch+pitch0+pitch1)%12
+# print(SIGNATURE_KEY_NAME_TO_DO_PITCH_DICT)
+
+MAIN_PITCH_SET = set(ORI_NOTE_NAME_TO_PITCH_DICT.values())
