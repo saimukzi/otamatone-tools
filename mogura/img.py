@@ -22,8 +22,14 @@ from PIL import Image, ImageDraw
 #             img_data = pil_img.tobytes()
 #             return pygame.image.fromstring(img_data, (SIZE,SIZE), pil_img.mode)
 
+def load_img(fn):
+    ret = pygame.image.load(os.path.join(common.PROJECT_PATH, 'img', fn))
+    ret = pygame.Surface.convert_alpha(ret)
+    return ret
+
 def plus_btn_img():
-    return pygame.image.load(os.path.join(common.PROJECT_PATH, 'img', 'plus_btn.svg'))
+    return load_img('plus_btn.svg')
+    # return pygame.image.load(os.path.join(common.PROJECT_PATH, 'img', 'plus_btn.svg'))
 
 # def minus_btn_img():
 #     SIZE,M = 32,4
@@ -44,7 +50,8 @@ def plus_btn_img():
 #             return pygame.image.fromstring(img_data, (SIZE,SIZE), pil_img.mode)
 
 def minus_btn_img():
-    return pygame.image.load(os.path.join(common.PROJECT_PATH, 'img', 'minus_btn.svg'))
+    return load_img('minus_btn.svg')
+    # return pygame.image.load(os.path.join(common.PROJECT_PATH, 'img', 'minus_btn.svg'))
 
 # def zero_btn_img():
 #     SIZE,M = 32,4
@@ -66,7 +73,9 @@ def minus_btn_img():
 #             return pygame.image.fromstring(img_data, (SIZE,SIZE), pil_img.mode)
 
 def zero_btn_img():
-    return pygame.image.load(os.path.join(common.PROJECT_PATH, 'img', 'zero_btn.svg'))
+    return load_img('zero_btn.svg')
+    # return pygame.image.load(os.path.join(common.PROJECT_PATH, 'img', 'zero_btn.svg'))
 
 def max_btn_img():
-    return pygame.image.load(os.path.join(common.PROJECT_PATH, 'img', 'max_btn.svg'))
+    return load_img('max_btn.svg')
+    # return pygame.image.load(os.path.join(common.PROJECT_PATH, 'img', 'max_btn.svg'))
