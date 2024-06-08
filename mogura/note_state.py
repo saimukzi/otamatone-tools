@@ -18,13 +18,13 @@ PITCH_C4 = 72
 # TIME_DIRECTION = mgr_enum.UP
 # PITCH_DIRECTION = mgr_enum.LEFT
 
-TIME_DIRECTION = mgr_enum.RIGHT
-PITCH_DIRECTION = mgr_enum.DOWN
+# TIME_DIRECTION = mgr_enum.RIGHT
+# PITCH_DIRECTION = mgr_enum.DOWN
 
 # TIME_HORI = TIME_DIRECTION & mgr_enum.HORI_MASK
-PITCH_HORI = PITCH_DIRECTION & mgr_enum.HORI_MASK
-TIME_POS = TIME_DIRECTION & mgr_enum.POS_MASK
-PITCH_POS = PITCH_DIRECTION & mgr_enum.POS_MASK
+# PITCH_HORI = PITCH_DIRECTION & mgr_enum.HORI_MASK
+# TIME_POS = TIME_DIRECTION & mgr_enum.POS_MASK
+# PITCH_POS = PITCH_DIRECTION & mgr_enum.POS_MASK
 
 NOTE_SPEED = 2
 
@@ -249,11 +249,13 @@ class NoteState(null_state.NullState):
         self.update_ui_matrice()
 
     def update_ui_matrice(self):
+        # self.pitch_direction_positive = PITCH_DIRECTION & mgr_enum.POS_MASK
+        self.matric_pitch_direction = self.runtime.ui_pitch_direction
+        self.matric_time_direction  = self.runtime.ui_time_direction
+
         screen_size = pygame.display.get_window_size()
-        screen_tt_max = screen_size[0] if TIME_DIRECTION & mgr_enum.HORI_MASK else screen_size[1]
-        screen_pp_max = screen_size[0] if PITCH_DIRECTION & mgr_enum.HORI_MASK else screen_size[1]
-        # self.matric_tt_dir = 1 if TIME_DIRECTION & mgr_enum.POS_MASK else -1
-        # self.matric_pp_dir = 1 if PITCH_DIRECTION & mgr_enum.POS_MASK else -1
+        screen_tt_max = screen_size[0] if self.matric_time_direction & mgr_enum.HORI_MASK else screen_size[1]
+        screen_pp_max = screen_size[0] if self.matric_pitch_direction & mgr_enum.HORI_MASK else screen_size[1]
 
         # midi_data = self.runtime.midi_data
         # track_data = midi_data['track_list'][0]
@@ -371,11 +373,11 @@ class NoteState(null_state.NullState):
         p40,p41,p42 = (pp41,tt40),(pp40,tt41),(pp41,tt42)
         pil_draw.line((p40,p41,p42,p40),fill=(0,0,0,255),width=self.matric_line1_z*4)
         pil_img = common_pil.resize_free(pil_img, (self.matric_cell_z,self.matric_cell_z))
-        if PITCH_DIRECTION == mgr_enum.LEFT:
+        if self.matric_pitch_direction == mgr_enum.LEFT:
             pil_img = common_pil.hflip_free(pil_img)
-        elif PITCH_DIRECTION == mgr_enum.UP:
+        elif self.matric_pitch_direction == mgr_enum.UP:
             pil_img = common_pil.ccw_rotate_free(pil_img)
-        elif PITCH_DIRECTION == mgr_enum.DOWN:
+        elif self.matric_pitch_direction == mgr_enum.DOWN:
             pil_img = common_pil.cw_rotate_free(pil_img)
         img_data = pil_img.tobytes()
         pyg_img = pygame.image.fromstring(img_data, (self.matric_cell_z,self.matric_cell_z), pil_img.mode)
@@ -410,11 +412,11 @@ class NoteState(null_state.NullState):
         p40,p41,p42 = (pp40,tt40),(pp41,tt41),(pp40,tt42)
         pil_draw.line((p40,p41,p42,p40),fill=(0,0,0,255),width=self.matric_line1_z*4)
         pil_img = common_pil.resize_free(pil_img, (self.matric_cell_z,self.matric_cell_z))
-        if PITCH_DIRECTION == mgr_enum.LEFT:
+        if self.matric_pitch_direction == mgr_enum.LEFT:
             pil_img = common_pil.hflip_free(pil_img)
-        elif PITCH_DIRECTION == mgr_enum.UP:
+        elif self.matric_pitch_direction == mgr_enum.UP:
             pil_img = common_pil.ccw_rotate_free(pil_img)
-        elif PITCH_DIRECTION == mgr_enum.DOWN:
+        elif self.matric_pitch_direction == mgr_enum.DOWN:
             pil_img = common_pil.cw_rotate_free(pil_img)
         img_data = pil_img.tobytes()
         pyg_img = pygame.image.fromstring(img_data, (self.matric_cell_z,self.matric_cell_z), pil_img.mode)
@@ -424,15 +426,15 @@ class NoteState(null_state.NullState):
         self.matric_note_img_data_dict[3]['offset_tt'] = -self.matric_cell_z//2
 
         for _k, matric_note_img_data in self.matric_note_img_data_dict.items():
-            matric_note_img_data['offset_x'] = matric_note_img_data['offset_pp'] if PITCH_DIRECTION == mgr_enum.RIGHT else \
-                                               -self.matric_cell_z-matric_note_img_data['offset_pp'] if PITCH_DIRECTION == mgr_enum.LEFT else \
-                                               matric_note_img_data['offset_tt'] if TIME_DIRECTION == mgr_enum.RIGHT else \
-                                               -self.matric_cell_z-matric_note_img_data['offset_tt'] if TIME_DIRECTION == mgr_enum.LEFT else \
+            matric_note_img_data['offset_x'] = matric_note_img_data['offset_pp'] if self.matric_pitch_direction == mgr_enum.RIGHT else \
+                                               -self.matric_cell_z-matric_note_img_data['offset_pp'] if self.matric_pitch_direction == mgr_enum.LEFT else \
+                                               matric_note_img_data['offset_tt'] if self.matric_time_direction == mgr_enum.RIGHT else \
+                                               -self.matric_cell_z-matric_note_img_data['offset_tt'] if self.matric_time_direction == mgr_enum.LEFT else \
                                                float("nan")
-            matric_note_img_data['offset_y'] = matric_note_img_data['offset_pp'] if PITCH_DIRECTION == mgr_enum.DOWN else \
-                                               -self.matric_cell_z-matric_note_img_data['offset_pp'] if PITCH_DIRECTION == mgr_enum.UP else \
-                                               matric_note_img_data['offset_tt'] if TIME_DIRECTION == mgr_enum.DOWN else \
-                                               -self.matric_cell_z-matric_note_img_data['offset_tt'] if TIME_DIRECTION == mgr_enum.UP else \
+            matric_note_img_data['offset_y'] = matric_note_img_data['offset_pp'] if self.matric_pitch_direction == mgr_enum.DOWN else \
+                                               -self.matric_cell_z-matric_note_img_data['offset_pp'] if self.matric_pitch_direction == mgr_enum.UP else \
+                                               matric_note_img_data['offset_tt'] if self.matric_time_direction == mgr_enum.DOWN else \
+                                               -self.matric_cell_z-matric_note_img_data['offset_tt'] if self.matric_time_direction == mgr_enum.UP else \
                                                float("nan")
 
 
@@ -467,29 +469,29 @@ class NoteState(null_state.NullState):
     
     def pptt_to_xy(self, pptt):
         pp,tt = pptt
-        x = pp if PITCH_DIRECTION == mgr_enum.RIGHT else \
-            self.matric_screen_pp_max-pp if PITCH_DIRECTION == mgr_enum.LEFT else \
-            tt if TIME_DIRECTION == mgr_enum.RIGHT else \
-            self.matric_screen_tt_max-tt if TIME_DIRECTION == mgr_enum.LEFT else \
+        x = pp if self.matric_pitch_direction == mgr_enum.RIGHT else \
+            self.matric_screen_pp_max-pp if self.matric_pitch_direction == mgr_enum.LEFT else \
+            tt if self.matric_time_direction == mgr_enum.RIGHT else \
+            self.matric_screen_tt_max-tt if self.matric_time_direction == mgr_enum.LEFT else \
             float("nan")
-        y = pp if PITCH_DIRECTION == mgr_enum.DOWN else \
-            self.matric_screen_pp_max-pp if PITCH_DIRECTION == mgr_enum.UP else \
-            tt if TIME_DIRECTION == mgr_enum.DOWN else \
-            self.matric_screen_tt_max-tt if TIME_DIRECTION == mgr_enum.UP else \
+        y = pp if self.matric_pitch_direction == mgr_enum.DOWN else \
+            self.matric_screen_pp_max-pp if self.matric_pitch_direction == mgr_enum.UP else \
+            tt if self.matric_time_direction == mgr_enum.DOWN else \
+            self.matric_screen_tt_max-tt if self.matric_time_direction == mgr_enum.UP else \
             float("nan")
         return (x,y)
 
     def xy_to_pptt(self, xy):
         x,y = xy
-        pp = x if PITCH_DIRECTION == mgr_enum.RIGHT else \
-             self.matric_screen_size[0]-x if PITCH_DIRECTION == mgr_enum.LEFT else \
-             y if PITCH_DIRECTION == mgr_enum.DOWN else \
-             self.matric_screen_size[1]-y if PITCH_DIRECTION == mgr_enum.UP else \
+        pp = x if self.matric_pitch_direction == mgr_enum.RIGHT else \
+             self.matric_screen_size[0]-x if self.matric_pitch_direction == mgr_enum.LEFT else \
+             y if self.matric_pitch_direction == mgr_enum.DOWN else \
+             self.matric_screen_size[1]-y if self.matric_pitch_direction == mgr_enum.UP else \
              float("nan")
-        tt = x if TIME_DIRECTION == mgr_enum.RIGHT else \
-             self.matric_screen_size[0]-x if TIME_DIRECTION == mgr_enum.LEFT else \
-             y if TIME_DIRECTION == mgr_enum.DOWN else \
-             self.matric_screen_size[1]-y if TIME_DIRECTION == mgr_enum.UP else \
+        tt = x if self.matric_time_direction == mgr_enum.RIGHT else \
+             self.matric_screen_size[0]-x if self.matric_time_direction == mgr_enum.LEFT else \
+             y if self.matric_time_direction == mgr_enum.DOWN else \
+             self.matric_screen_size[1]-y if self.matric_time_direction == mgr_enum.UP else \
              float("nan")
         return (pp,tt)
 

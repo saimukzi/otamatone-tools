@@ -7,6 +7,7 @@ import midi_data
 import note_state
 import pygame
 import time
+import mgr_enum
 
 class PlayState(note_state.NoteState):
 
@@ -256,7 +257,7 @@ class PlayState(note_state.NoteState):
             ppitch0x = (self.track_data['ppitch0']-2) * const.DFT_PITCH_SAMPLE_COUNT
             ppitch1x = (self.track_data['ppitch1']+2) * const.DFT_PITCH_SAMPLE_COUNT
             freq_list = range(ppitch0x, ppitch1x+1)
-            if not note_state.PITCH_POS:
+            if not self.matric_pitch_direction & mgr_enum.POS_MASK:
                 freq_list = reversed(freq_list)
             freq_list = map(lambda i: i/const.DFT_PITCH_SAMPLE_COUNT, freq_list)
             freq_list = map(lambda i: i-common.A4_PITCH, freq_list)

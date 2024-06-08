@@ -24,6 +24,7 @@ import threading
 import time
 import timer_pool
 import user_data
+import mgr_enum
 
 FPS = 120
 EPS = FPS * 10
@@ -41,6 +42,8 @@ class Runtime:
         self.screen_size = None
 
         self.ui_zoom_level = 12
+        self.ui_time_direction = mgr_enum.RIGHT
+        self.ui_pitch_direction = mgr_enum.DOWN
         
         self.play_beat_list = [0]*4
         # self.time_multiplier = 2 # >1: slower, <1: faster
