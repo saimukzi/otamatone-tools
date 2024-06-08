@@ -38,14 +38,40 @@ def json_path_to_data(file_path):
     for track_list in ret['track_list']:
         tempo_list = track_list['tempo_list']
         timestamp_list = copy.deepcopy(json_data['TIMESTAMP_LIST'])
+
         for timestamp in timestamp_list:
             # timestamp['temposec'] = tick_to_temposec(timestamp['SHEET_TICK'], tempo_list)
             timestamp['temposec'] = tempo_conv(timestamp['SHEET_TICK'], 'tick', 'temposec', tempo_list)
+
+        temposec_list = set()
         for tempo in tempo_list:
+            temposec_list.add(tempo['temposec0'])
+            temposec_list.add(tempo['temposec1'])
+        for timestamp in timestamp_list:
+            temposec_list.add(timestamp['temposec'])
+        temposec_list=list(sorted(temposec_list))
+        print(temposec_list)
+
+        new_tempo_list = []
+        for i in range(len(temposec_list)-1):
+            tempo = {
+                'temposec0':temposec_list[i],
+                'temposec1':temposec_list[i+1],
+            }
+            tempo['tempo'] = find_tempo(tempo['temposec0'], 'temposec', tempo_list)['tempo']
+            tempo['tick0'] = tempo_conv(tempo['temposec0'], 'temposec', 'tick', tempo_list)
+            tempo['tick1'] = tempo_conv(tempo['temposec1'], 'temposec', 'tick', tempo_list)
             tempo['audiosample0'] = temposec_to_sample(tempo['temposec0'], timestamp_list)
             tempo['audiosample1'] = temposec_to_sample(tempo['temposec1'], timestamp_list)
             tempo['orisec0'] = tempo['audiosample0']/audio_sr
             tempo['orisec1'] = tempo['audiosample1']/audio_sr
+            new_tempo_list.append(tempo)
+
+        track_list['tempo_list'] = new_tempo_list
+
+        # print(timestamp_list)
+        # for tempo in tempo_list:
+        # print(tempo_list)
 
     return ret
 
@@ -930,6 +956,13 @@ def tempo_conv(v, unit_from, unit_to, tempo_list):
             break
     ret = (v-tempo[from0])*(tempo[to1]-tempo[to0])/(tempo[from1]-tempo[from0])+tempo[to0]
     return ret
+
+def find_tempo(v, unit, tempo_list):
+    for tempo in tempo_list:
+        if v < tempo[unit+'1']:
+            return tempo
+    return tempo
+
 
 ORI_NOTE_NAME_TO_PITCH_DICT = {
     'C':  0,
