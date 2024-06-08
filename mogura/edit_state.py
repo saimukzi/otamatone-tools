@@ -111,18 +111,26 @@ class EditState(note_state.NoteState):
             self.runtime.speed_level -= 6 if is_shift_down else 1
         if self.gui.is_btn_active('speed.plus'):
             self.runtime.speed_level += 6 if is_shift_down else 1
+        if self.gui.is_btn_active('beat_vol.zero'):
+            self.runtime.beat_vol = 0
         if self.gui.is_btn_active('beat_vol.minus'):
             self.runtime.beat_vol -= 16 if is_shift_down else 1
             self.runtime.beat_vol = min(max(0,self.runtime.beat_vol),127)
         if self.gui.is_btn_active('beat_vol.plus'):
             self.runtime.beat_vol += 16 if is_shift_down else 1
             self.runtime.beat_vol = min(max(0,self.runtime.beat_vol),127)
+        if self.gui.is_btn_active('beat_vol.max'):
+            self.runtime.beat_vol = 127
+        if self.gui.is_btn_active('main_vol.zero'):
+            self.runtime.main_vol = 0
         if self.gui.is_btn_active('main_vol.minus'):
             self.runtime.main_vol -= 16 if is_shift_down else 1
             self.runtime.main_vol = min(max(0,self.runtime.main_vol),127)
         if self.gui.is_btn_active('main_vol.plus'):
             self.runtime.main_vol += 16 if is_shift_down else 1
             self.runtime.main_vol = min(max(0,self.runtime.main_vol),127)
+        if self.gui.is_btn_active('main_vol.max'):
+            self.runtime.main_vol = 127
         if self.gui.is_btn_active('dpitch.minus'):
             self.runtime.dpitch -= 4 if is_shift_down else 1
             self.runtime.dpitch = min(max(
@@ -154,8 +162,10 @@ class EditState(note_state.NoteState):
     def on_active(self):
         self.track_data = self.runtime.midi_data['track_list'][0]
         self.img_dict = {}
-        self.img_dict['plus']  = img.plus_btn_img()
+        self.img_dict['zero']  = img.zero_btn_img()
         self.img_dict['minus'] = img.minus_btn_img()
+        self.img_dict['plus']  = img.plus_btn_img()
+        self.img_dict['max']   = img.max_btn_img()
         super().on_active()
 
     def on_inactive(self):
@@ -166,29 +176,35 @@ class EditState(note_state.NoteState):
     def update_ui_matrice(self):
         super().update_ui_matrice()
         width,height = self.matric_screen_size
-        x1 = 120
-        x0 = x1-80
-        x2 = x1+80
+        x2 = 152
+        x1 = x2-80
+        x0 = x1-32
+        x3 = x2+80
+        x4 = x3+32
         y = height-30
         self.gui = gui.Gui()
-        self.gui.add_button('speed.minus',self.img_dict['minus'],(x0,y),6,'se_control')
-        self.gui.add_label('speed.text','',const.FONT_SIZE,(127,127,127), (x1,y), 5,'se_control')
-        self.gui.add_button('speed.plus', self.img_dict['plus'], (x2,y),4,'se_control')
+        self.gui.add_button('speed.minus',self.img_dict['minus'],(x1,y),6,'se_control')
+        self.gui.add_label('speed.text','',const.FONT_SIZE,(127,127,127), (x2,y), 5,'se_control')
+        self.gui.add_button('speed.plus', self.img_dict['plus'], (x3,y),4,'se_control')
         y -= 40
-        self.gui.add_button('beat_vol.minus',self.img_dict['minus'],(x0,y),6,'se_control')
-        self.gui.add_label('beat_vol.text','',const.FONT_SIZE,(127,127,127), (x1,y), 5,'se_control')
-        self.gui.add_button('beat_vol.plus', self.img_dict['plus'], (x2,y),4,'se_control')
+        self.gui.add_button('beat_vol.zero',self.img_dict['zero'],(x0,y),6,'se_control')
+        self.gui.add_button('beat_vol.minus',self.img_dict['minus'],(x1,y),6,'se_control')
+        self.gui.add_label('beat_vol.text','',const.FONT_SIZE,(127,127,127), (x2,y), 5,'se_control')
+        self.gui.add_button('beat_vol.plus', self.img_dict['plus'], (x3,y),4,'se_control')
+        self.gui.add_button('beat_vol.max', self.img_dict['max'], (x4,y),4,'se_control')
         y -= 40
-        self.gui.add_button('main_vol.minus',self.img_dict['minus'],(x0,y),6,'se_control')
-        self.gui.add_label('main_vol.text','',const.FONT_SIZE,(127,127,127), (x1,y), 5,'se_control')
-        self.gui.add_button('main_vol.plus', self.img_dict['plus'], (x2,y),4,'se_control')
+        self.gui.add_button('main_vol.zero',self.img_dict['zero'],(x0,y),6,'se_control')
+        self.gui.add_button('main_vol.minus',self.img_dict['minus'],(x1,y),6,'se_control')
+        self.gui.add_label('main_vol.text','',const.FONT_SIZE,(127,127,127), (x2,y), 5,'se_control')
+        self.gui.add_button('main_vol.plus', self.img_dict['plus'], (x3,y),4,'se_control')
+        self.gui.add_button('main_vol.max', self.img_dict['max'], (x4,y),4,'se_control')
         y -= 40
-        self.gui.add_button('dpitch.minus',self.img_dict['minus'],(x0,y),6,'se_control')
-        self.gui.add_label('dpitch.text','',const.FONT_SIZE,(127,127,127), (x1,y), 5,'se_control')
-        self.gui.add_button('dpitch.plus', self.img_dict['plus'], (x2,y),4,'se_control')
+        self.gui.add_button('dpitch.minus',self.img_dict['minus'],(x1,y),6,'se_control')
+        self.gui.add_label('dpitch.text','',const.FONT_SIZE,(127,127,127), (x2,y), 5,'se_control')
+        self.gui.add_button('dpitch.plus', self.img_dict['plus'], (x3,y),4,'se_control')
         y -= 40
-        self.gui.add_label('config.text','Config',const.FONT_SIZE,(127,127,127), (x1,y), 5,'se_control')
-        self.gui.add_click('config.open_ui', (x1,y), (240,40), 5,'se_control')
+        self.gui.add_label('config.text','Config',const.FONT_SIZE,(127,127,127), (x2,y), 5,'se_control')
+        self.gui.add_click('config.open_ui', (x2,y), (240,40), 5,'se_control')
 
     def on_midi_update(self):
         self.track_data = self.runtime.midi_data['track_list'][0]

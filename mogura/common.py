@@ -1,9 +1,11 @@
 import json
+import os
 
 PHI = (1+5**0.5)/2 
 A4_FREQ = 440
 A4_PITCH = 69
 EPSILON = 1e-6
+PROJECT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 def anchor(xy, size, anc):
     x,y = xy
