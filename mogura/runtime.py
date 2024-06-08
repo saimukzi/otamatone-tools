@@ -42,8 +42,6 @@ class Runtime:
         self.screen_size = None
 
         self.ui_zoom_level = 12
-        self.ui_time_direction = mgr_enum.RIGHT
-        self.ui_pitch_direction = mgr_enum.DOWN
         
         self.play_beat_list = [0]*4
         # self.time_multiplier = 2 # >1: slower, <1: faster
@@ -60,6 +58,8 @@ class Runtime:
             'audio_input_sample_rate': 44100,
             'audio_output_enabled': False,
             'audio_output_device_info': None,
+            'ui_time_direction': mgr_enum.RIGHT,
+            'ui_pitch_direction': mgr_enum.DOWN,
         }
         for key in DEFAULT_CONFIG:
             if key not in self.config:

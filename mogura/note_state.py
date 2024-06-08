@@ -249,9 +249,8 @@ class NoteState(null_state.NullState):
         self.update_ui_matrice()
 
     def update_ui_matrice(self):
-        # self.pitch_direction_positive = PITCH_DIRECTION & mgr_enum.POS_MASK
-        self.matric_pitch_direction = self.runtime.ui_pitch_direction
-        self.matric_time_direction  = self.runtime.ui_time_direction
+        self.matric_time_direction  = self.runtime.config['ui_time_direction']
+        self.matric_pitch_direction = self.runtime.config['ui_pitch_direction']
 
         screen_size = pygame.display.get_window_size()
         screen_tt_max = screen_size[0] if self.matric_time_direction & mgr_enum.HORI_MASK else screen_size[1]
