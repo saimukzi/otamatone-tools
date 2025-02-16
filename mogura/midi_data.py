@@ -35,8 +35,9 @@ def json_path_to_data(file_path):
     audio_path = json_data['AUDIO_PATH']
     audio_path = os.path.join(os.path.dirname(file_path),audio_path)
     audio_np, audio_sr = soundfile.read(audio_path, dtype='int16')
-    audio_bytes = audio_np.tobytes()
-    ret['audio_data']['data'] = audio_bytes
+    # audio_bytes = audio_np.tobytes()
+    # ret['audio_data']['data'] = audio_bytes
+    ret['audio_data']['audio_np'] = audio_np
     ret['audio_data']['SAMPLE_RATE'] = audio_sr
 
     for track_list in ret['track_list']:

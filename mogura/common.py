@@ -7,6 +7,8 @@ A4_PITCH = 69
 EPSILON = 1e-6
 PROJECT_PATH = os.path.dirname(os.path.abspath(__file__))
 
+os.environ['PATH'] += os.pathsep + os.path.join(PROJECT_PATH, 'rubberband')
+
 def anchor(xy, size, anc):
     x,y = xy
     width,height = size
