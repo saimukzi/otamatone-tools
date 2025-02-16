@@ -6,6 +6,7 @@ import math
 import mido
 import os
 import soundfile
+import musicxml_parser
 
 
 INF = float('inf')
@@ -16,14 +17,17 @@ def path_to_data(file_path):
         return json_path_to_data(file_path)
     if file_path.endswith('.mid'):
         return midi_path_to_data(file_path)
+    if file_path.endswith('.musicxml'):
+        return musicxml_parser.path_to_data(file_path)
 
 
 def json_path_to_data(file_path):
     json_data = common.json_path_to_data(file_path)
+
     sheet_path = json_data['SHEET_PATH']
     sheet_path = os.path.join(os.path.dirname(file_path),sheet_path)
-
-    ret = mid_to_data(mido.MidiFile(sheet_path))
+    # ret = mid_to_data(mido.MidiFile(sheet_path))
+    ret = path_to_data(sheet_path)
 
     ret['audio_data'] = {}
     ret['audio_data']['timestamp_list'] = json_data['TIMESTAMP_LIST']
@@ -149,6 +153,7 @@ def track_to_noteev_list(track):
                 'channel':0,
                 'opitch':msg.note,
                 'tick0':tick,
+                'slur': False,
             }
             noteev = (tick,1,msg.channel,msg.note,noteev)
             ret_noteev_list.append(noteev)
@@ -243,6 +248,8 @@ def track_to_time_signature_list(track):
     # time_signature_list[0]['tick0'] = -INF
     
     _check_time_signature_list(time_signature_list)
+
+    print(time_signature_list)
 
     return time_signature_list
 
@@ -362,18 +369,24 @@ def track_data_chop_tick(track_data, start_bar_tick, start_note_tick, end_note_t
 
     out_track_data = copy.deepcopy(track_data)
     noteev_list = out_track_data['noteev_list']
+    noteev_list = filter(_noteev_on_filter, noteev_list)
     noteev_list = filter(_track_data_chop_time_noteev_filter(start_note_tick, end_note_tick), noteev_list)
     noteev_list = list(noteev_list)
     for noteev in noteev_list:
-        noteev['tick0'] = max(noteev['tick0'], start_note_tick)
-        noteev['tick1'] = min(noteev['tick1'], end_note_tick)
-        noteev['tick'] = noteev['tick0']
+        if 'tick0' in noteev: noteev['tick0'] = max(noteev['tick0'], start_note_tick)
+        if 'tick1' in noteev: noteev['tick1'] = min(noteev['tick1'], end_note_tick)
+        if 'tick' in noteev:  noteev['tick']  = max(noteev['tick'], start_note_tick)
 
-    noteev_off_list = map(_on_noteev_to_off_noteev, noteev_list)
-    noteev_off_list = list(noteev_off_list)
+    if len(noteev_list) > 0:
+        noteev_list[-1]['slur'] = False
 
-    noteev_list = noteev_list + noteev_off_list
-    noteev_list = sorted(noteev_list, key=_noteev_sort_key)
+    # noteev_off_list = map(_on_noteev_to_off_noteev, noteev_list)
+    # noteev_off_list = filter(lambda i:i is not None, noteev_off_list)
+    # noteev_off_list = list(noteev_off_list)
+
+    # noteev_list = noteev_list + noteev_off_list
+    # noteev_list = sorted(noteev_list, key=_noteev_sort_key)
+    noteev_list = noteev_list_process_slur(noteev_list)
 
     out_track_data['noteev_list'] = noteev_list
 
@@ -420,27 +433,23 @@ def track_data_chop_tick(track_data, start_bar_tick, start_note_tick, end_note_t
 
 def _track_data_chop_time_noteev_filter(start_tick, end_tick):
     def _ret(noteev):
-        if noteev['type'] != 'on': return False
-        if noteev['tick0'] >= end_tick:   return False
-        if noteev['tick1'] <= start_tick: return False
+        # if noteev['type'] != 'on': return False
+        if ('tick' in noteev) and (noteev['tick'] >= end_tick):     return False
+        if ('tick' in noteev) and (noteev['tick'] < start_tick):   return False
+        if ('tick0' in noteev) and (noteev['tick0'] >= end_tick):   return False
+        if ('tick1' in noteev) and (noteev['tick1'] <= start_tick): return False
         return True
     return _ret
 
 def _on_noteev_to_off_noteev(noteev):
-    #print(f'noteev={noteev}')
-    ret_data = {
-        'usage':noteev['usage'],
-        'tick':noteev['tick1'],
-        'type':'off',
-        'channel':noteev['channel'],
-        'opitch':noteev['opitch'],
-    }
-    if 'ppitch' in noteev:
-        ret_data['ppitch'] = noteev['ppitch']
+    if noteev['type'] != 'on': return None
+    ret_data = copy.deepcopy(noteev)
+    ret_data['tick'] = noteev['tick1']
+    ret_data['type'] = 'off'
     return ret_data
 
 def _noteev_sort_key(noteev):
-    TYPE_TO_IDX={'off':0,'on':1}
+    TYPE_TO_IDX={'off':0,'slur':1,'on':2}
     return (
         noteev['tick'],
         TYPE_TO_IDX[noteev['type']],
@@ -543,20 +552,23 @@ def merge_track_data(src_track_data_list, tick_list):
 
     noteev_list = itertools.chain(*list(map(lambda i:i['noteev_list'],src_track_data_list)))
     noteev_list = sorted(noteev_list, key=_noteev_sort_key)
-    on_channel_opitch_set = set()
-    #print(json.dumps(noteev_list,indent=2))
-    for noteev in noteev_list:
-        #print(f'BYFKBGRYBS noteev={noteev}')
-        channel_opitch = (noteev['channel'], noteev['opitch'])
-        if noteev['type'] == 'on':
-            if channel_opitch in on_channel_opitch_set:
-                assert(False)
-            on_channel_opitch_set.add(channel_opitch)
-        elif noteev['type'] == 'off':
-            assert(channel_opitch in on_channel_opitch_set)
-            on_channel_opitch_set.remove(channel_opitch)
-        else:
-            assert(False)
+
+    # for checking only?
+    # on_channel_opitch_set = set()
+    # #print(json.dumps(noteev_list,indent=2))
+    # for noteev in noteev_list:
+    #     #print(f'BYFKBGRYBS noteev={noteev}')
+    #     channel_opitch = (noteev['channel'], noteev['opitch'])
+    #     if noteev['type'] == 'on':
+    #         if channel_opitch in on_channel_opitch_set:
+    #             assert(False)
+    #         on_channel_opitch_set.add(channel_opitch)
+    #     elif noteev['type'] == 'off':
+    #         assert(channel_opitch in on_channel_opitch_set)
+    #         on_channel_opitch_set.remove(channel_opitch)
+    #     # else:
+    #     #     assert(False)
+
     output_track_data['noteev_list'] = noteev_list
 
     # bar_list = itertools.chain(*list(map(lambda i:i['bar_list'],src_track_data_list)))
@@ -694,6 +706,55 @@ def merge_track_data(src_track_data_list, tick_list):
 # 
 #     return out_track_data
 
+def noteev_list_process_slur(noteev_list):
+    ret_noteev_list = noteev_list
+    ret_noteev_list = filter(lambda i:i['type']=='on',ret_noteev_list)
+    ret_noteev_list = list(ret_noteev_list)
+
+    old_ret_noteev_list = ret_noteev_list
+    ret_noteev_list = []
+    last_slur_noteev = None
+    for noteev in old_ret_noteev_list:
+        if (last_slur_noteev is not None) and (last_slur_noteev['opitch'] == noteev['opitch']):
+            noteev['tick'] = last_slur_noteev['tick']
+            noteev['tick0'] = last_slur_noteev['tick0']
+            if 'sec' in last_slur_noteev:
+                noteev['sec'] = last_slur_noteev['sec']
+            if 'sec0' in last_slur_noteev:
+                noteev['sec0'] = last_slur_noteev['sec0']
+            last_slur_noteev = None
+        
+        if last_slur_noteev is not None:
+            ret_noteev_list.append(last_slur_noteev)
+            ret_noteev_list.append(_on_noteev_to_off_noteev(last_slur_noteev))
+            append_noteev = {
+                'usage': 'OTM',
+                'tick': last_slur_noteev['tick1'],
+                'type': 'slur',
+                'channel': last_slur_noteev['channel'],
+                'opitch': last_slur_noteev['opitch'],
+                'opitch0': last_slur_noteev['opitch'],
+                'opitch1': noteev['opitch'],
+            }
+            if 'ppitch' in last_slur_noteev:
+                append_noteev['ppitch']  = last_slur_noteev['ppitch']
+                append_noteev['ppitch0'] = last_slur_noteev['ppitch']
+            if 'ppitch' in noteev:
+                append_noteev['ppitch1'] = noteev['ppitch']
+            ret_noteev_list.append(append_noteev)
+            last_slur_noteev = None
+        
+        if noteev['slur']:
+            last_slur_noteev = noteev
+        else:
+            ret_noteev_list.append(noteev)
+            ret_noteev_list.append(_on_noteev_to_off_noteev(noteev))
+
+    assert(last_slur_noteev is None)
+
+    ret_noteev_list = sorted(ret_noteev_list, key=_noteev_sort_key)
+
+    return ret_noteev_list
 
 def fill_sec(track_data, time_multiplier):
     track_data['time_multiplier'] = time_multiplier
@@ -774,7 +835,9 @@ def track_data_add_woodblock(track_data, start_tick, end_tick):
         })
         if i >= bar: bar=next(bar_itr)
     
-    off_noteev_list = list(map(_on_noteev_to_off_noteev,on_noteev_list))
+    off_noteev_list = map(_on_noteev_to_off_noteev,on_noteev_list)
+    off_noteev_list = filter(lambda i:i is not None,off_noteev_list)
+    off_noteev_list = list(off_noteev_list)
     noteev_list = out_track_data['noteev_list'] + on_noteev_list + off_noteev_list
     noteev_list = sorted(noteev_list, key=_noteev_sort_key)
     out_track_data['noteev_list'] = noteev_list
@@ -889,6 +952,10 @@ def track_data_cal_ppitch(track_data, dpitch):
     for noteev in track_data['noteev_list']:
         if noteev['usage'] == 'BEAT': continue
         noteev['ppitch'] = noteev['opitch'] + dpitch
+        if 'opitch0' in noteev:
+            noteev['ppitch0'] = noteev['opitch0'] + dpitch
+        if 'opitch1' in noteev:
+            noteev['ppitch1'] = noteev['opitch1'] + dpitch
     track_data['ppitch0'] = track_data['opitch0'] + dpitch
     track_data['ppitch1'] = track_data['opitch1'] + dpitch
 
@@ -991,3 +1058,6 @@ for ori_note_name, pitch in ORI_NOTE_NAME_TO_PITCH_DICT.items():
 # print(SIGNATURE_KEY_NAME_TO_DO_PITCH_DICT)
 
 MAIN_PITCH_SET = set(ORI_NOTE_NAME_TO_PITCH_DICT.values())
+
+def _noteev_on_filter(noteev):
+    return noteev['type'] == 'on'

@@ -2,7 +2,9 @@ import json
 import os
 
 def get_user_data_path():
-    return os.path.join(os.getenv('LOCALAPPDATA'), 'mogura', 'user_data.json')
+    ret = os.path.join(os.getenv('LOCALAPPDATA'), 'mogura', 'user_data.json')
+    print(ret)
+    return ret
 
 def save_user_data(data):
     user_data_path = get_user_data_path()

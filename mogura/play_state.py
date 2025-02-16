@@ -51,6 +51,7 @@ class PlayState(note_state.NoteState):
         draw_session['current_tick'] = current_tick
 
         self.draw_color_note_rail_bg(draw_session)
+        self.draw_slur(draw_session)
         self.draw_note_length(draw_session)
 
         if self.freq_list is not None:

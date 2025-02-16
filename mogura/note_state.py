@@ -44,6 +44,7 @@ class NoteState(null_state.NullState):
     def draw_note_rail(self, screen, vision_offset_tt):
         draw_session = self.get_draw_session(screen, vision_offset_tt)
         self.draw_color_note_rail_bg(draw_session)
+        self.draw_slur(draw_session)
         self.draw_note_length(draw_session)
         self.draw_time_line_thin(draw_session)
         self.draw_note_rail_ppitch_line(draw_session)
@@ -73,6 +74,53 @@ class NoteState(null_state.NullState):
         for matric_note_rail_bg_rect_data in self.matric_note_rail_bg_rect_data_list:
             #pygame.draw.rect(screen, matric_note_rail_bg_rect_data['color'], matric_note_rail_bg_rect_data['rect'])
             screen.fill(**matric_note_rail_bg_rect_data)
+
+    def draw_slur(self, draw_session):
+        screen = draw_session['screen']
+        track_data = draw_session['track_data']
+        vision_offset_tt = draw_session['vision_offset_tt']
+        min_tick = draw_session['min_tick']
+        max_tick = draw_session['max_tick']
+
+        noteev_list = track_data['noteev_list']
+        noteev_list = filter(lambda i:i['type']=='slur',noteev_list)
+        noteev_list = filter(lambda i:i['tick']>min_tick,noteev_list)
+        noteev_list = filter(lambda i:i['tick']<max_tick,noteev_list)
+        noteev_list = list(noteev_list)
+        c,e = 0xcc, 0xdd
+        d = (c+e)//2
+        cc = (d,d,d,e)
+        # CC = [
+        #     (e,c,c,e),
+        #     (e,d,c,e),
+        #     (e,e,c,e),
+        #     (d,e,c,e),
+        #     (c,e,c,e),
+        #     (c,e,d,e),
+        #     (c,e,e,e),
+        #     (c,d,e,e),
+        #     (c,c,e,e),
+        #     (d,c,e,e),
+        #     (e,c,e,e),
+        #     (e,c,d,e),
+        # ]
+        for noteev in noteev_list:
+            ppitch0 = noteev['ppitch0']
+            ppitch1 = noteev['ppitch1']
+            pp0 = self.ppitch_to_pp(min(ppitch0,ppitch1))
+            pp1 = self.ppitch_to_pp(max(ppitch0,ppitch1))
+            pp0 = pp0-self.matric_cell_z//8
+            pp1 = pp1+self.matric_cell_z//8
+            tt0 = round(noteev['tt']-vision_offset_tt+self.matric_aim_tt)-self.matric_cell_z//8
+            tt0 = min(max(tt0,0),self.matric_screen_tt_max)
+            tt1 = round(noteev['tt']-vision_offset_tt+self.matric_aim_tt)+self.matric_cell_z//8
+            tt1 = min(max(tt1,0),self.matric_screen_tt_max)
+            # cc = (ppitch+4+300-PITCH_C4)%12
+            # cc = CC[cc]
+            screen.fill(
+                rect=self.ppttrect_to_xyrect((pp0,tt0,pp1,tt1)),
+                color=cc,
+            )
 
     def draw_note_length(self, draw_session):
         screen = draw_session['screen']

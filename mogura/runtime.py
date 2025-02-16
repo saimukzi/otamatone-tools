@@ -58,6 +58,7 @@ class Runtime:
             'audio_input_sample_rate': 44100,
             'audio_output_enabled': False,
             'audio_output_device_info': None,
+            'audio_output_sample_rate': 44100,
             'ui_time_direction': mgr_enum.RIGHT,
             'ui_pitch_direction': mgr_enum.DOWN,
         }
@@ -129,14 +130,6 @@ class Runtime:
             if event.type == pygame.QUIT:
                 self.timer_pool.stop()
             if event.type == pygame.DROPFILE:
-                # file_path = event.file
-                # self.midi_data = midi_data.path_to_data(file_path)
-                # self.play_beat_list[0] = 0
-                # self.play_beat_list[1] = 0
-                # self.play_beat_list[2] = self.midi_data['track_list'][0]['bar_list'][-1] // self.midi_data['ticks_per_beat']
-                # self.play_beat_list[3] = self.play_beat_list[2]
-                # self.state_pool.set_active('EDIT')
-                # self.state_pool.on_midi_update()
                 self.open_file(event.file)
             self.state_pool.event_tick(event, sec)
 
