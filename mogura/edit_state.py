@@ -64,6 +64,7 @@ class EditState(note_state.NoteState):
         self.gui.set_label_text('speed.text', f'speed={self.runtime.speed_level}')
         self.gui.set_label_text('beat_vol.text', f'beat={self.runtime.beat_vol}')
         self.gui.set_label_text('main_vol.text', f'main={self.runtime.main_vol}')
+        self.gui.set_label_text('music_vol.text', f'music={self.runtime.music_vol}')
         self.gui.set_label_text('dpitch.text', f'pitch={self.runtime.dpitch}')
         self.gui.draw_layer('se_control', screen, text_draw)
 
@@ -131,6 +132,16 @@ class EditState(note_state.NoteState):
             self.runtime.main_vol = min(max(0,self.runtime.main_vol),127)
         if self.gui.is_btn_active('main_vol.max'):
             self.runtime.main_vol = 127
+        if self.gui.is_btn_active('music_vol.zero'):
+            self.runtime.music_vol = 0
+        if self.gui.is_btn_active('music_vol.minus'):
+            self.runtime.music_vol -= 16 if is_shift_down else 1
+            self.runtime.music_vol = min(max(0,self.runtime.music_vol),127)
+        if self.gui.is_btn_active('music_vol.plus'):
+            self.runtime.music_vol += 16 if is_shift_down else 1
+            self.runtime.music_vol = min(max(0,self.runtime.music_vol),127)
+        if self.gui.is_btn_active('music_vol.max'):
+            self.runtime.music_vol = 127
         if self.gui.is_btn_active('dpitch.minus'):
             self.runtime.dpitch -= 4 if is_shift_down else 1
             self.runtime.dpitch = min(max(
@@ -198,6 +209,12 @@ class EditState(note_state.NoteState):
         self.gui.add_label('main_vol.text','',const.FONT_SIZE,(127,127,127), (x2,y), 5,'se_control')
         self.gui.add_button('main_vol.plus', self.img_dict['plus'], (x3,y),4,'se_control')
         self.gui.add_button('main_vol.max', self.img_dict['max'], (x4,y),4,'se_control')
+        y -= 40
+        self.gui.add_button('music_vol.zero',self.img_dict['zero'],(x0,y),6,'se_control')
+        self.gui.add_button('music_vol.minus',self.img_dict['minus'],(x1,y),6,'se_control')
+        self.gui.add_label('music_vol.text','',const.FONT_SIZE,(127,127,127), (x2,y), 5,'se_control')
+        self.gui.add_button('music_vol.plus', self.img_dict['plus'], (x3,y),4,'se_control')
+        self.gui.add_button('music_vol.max', self.img_dict['max'], (x4,y),4,'se_control')
         y -= 40
         self.gui.add_button('dpitch.minus',self.img_dict['minus'],(x1,y),6,'se_control')
         self.gui.add_label('dpitch.text','',const.FONT_SIZE,(127,127,127), (x2,y), 5,'se_control')

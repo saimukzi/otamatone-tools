@@ -55,6 +55,9 @@ class AudioOutput(object):
 
         print(f'self.frame0 = {self.frame0}')
 
+        if 'data' not in self.audio_data:
+            self.audio_data['data'] = self.audio_data['audio_np'].tobytes()
+
         audio_output_device_list = get_audio_output_device_list(self.audio_data['SAMPLE_RATE'])
         # print(audio_output_device_list)
         audio_output_device_list = filter(lambda info: info['hash']==self.runtime.config['audio_output_device_info']['hash'], audio_output_device_list)

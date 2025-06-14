@@ -70,6 +70,7 @@ class Runtime:
         self.beat_vol = 127
         self.main_vol = 127
         self.dpitch = 0
+        self.music_vol = 127
 
         self.exit_done = False
 

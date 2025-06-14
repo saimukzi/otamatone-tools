@@ -1,4 +1,5 @@
 import audio_input
+import audio_stretch
 import common
 import const
 import copy
@@ -234,14 +235,13 @@ class PlayState(note_state.NoteState):
 
         time_multiplier = self.runtime.time_multiplier()
 
-        audio_data = copy.deepcopy(self.runtime.midi_data['audio_data'])
+        # audio_data = copy.deepcopy(self.runtime.midi_data['audio_data'])
         # audio_data = midi_data.audio_data_move_tick(audio_data, -play_tick_list[0])
-        if audio_data is not None:
-            audio_data_multplied = copy.deepcopy(audio_data)
-            audio_data_multplied['audio_np'] = pyrb.time_stretch(audio_data['audio_np'], audio_data['SAMPLE_RATE'], 1/time_multiplier)
-            audio_data_multplied['data'] = audio_data_multplied['audio_np'].tobytes()
-        else:
-            audio_data_multplied = None
+        output_audio_data = audio_stretch.stretch_audio(self.runtime.midi_data['audio_data'], time_multiplier)
+
+        # volume
+        if output_audio_data:
+            output_audio_data['audio_np'] = (output_audio_data['audio_np'].astype('float32') * (self.runtime.music_vol/127.0)).astype('int16')
 
         # play_track_data = midi_data.track_data_time_multiply(play_track_data, time_multiplier)
         # display_track_data = midi_data.track_data_time_multiply(display_track_data, time_multiplier)
@@ -256,10 +256,10 @@ class PlayState(note_state.NoteState):
         self.runtime.midi_player.channel_to_volume_dict[15] = self.runtime.beat_vol
         self.runtime.midi_player.play(play_track_data['noteev_list'],self.loop_sec,self.start_sec,self.start_sec-2)
 
-        if (audio_data_multplied is not None) and self.runtime.config['audio_output_enabled']:
+        if (output_audio_data is not None) and self.runtime.config['audio_output_enabled']:
             audio_start_sample = round(midi_data.tempo_conv(0, 'tick', 'audiosample', play_track_data['tempo_list'])*time_multiplier)
             audio_end_sample = round(midi_data.tempo_conv(tick_30, 'tick', 'audiosample', play_track_data['tempo_list'])*time_multiplier)
-            self.runtime.audio_output.play(audio_data_multplied, audio_start_sample, audio_end_sample, self.start_sec)
+            self.runtime.audio_output.play(output_audio_data, audio_start_sample, audio_end_sample, self.start_sec)
 
         self.audio_input_enabled = self.runtime.config['audio_input_enabled']
         if self.audio_input_enabled:

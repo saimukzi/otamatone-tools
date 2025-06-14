@@ -30,7 +30,7 @@ def json_path_to_data(file_path):
     ret = path_to_data(sheet_path)
 
     ret['audio_data'] = {}
-    ret['audio_data']['timestamp_list'] = json_data['TIMESTAMP_LIST']
+    # ret['audio_data']['timestamp_list'] = json_data['TIMESTAMP_LIST']
 
     audio_path = json_data['AUDIO_PATH']
     audio_path = os.path.join(os.path.dirname(file_path),audio_path)
@@ -989,14 +989,14 @@ def temposec_to_sample(temposec, timestamp_list):
     return sample
 
 
-def audio_data_move_tick(audio_data, tick_diff):
-    if audio_data is None:
-        return None
-    out_audio_data = copy.deepcopy(audio_data)
-    timestamp_list = out_audio_data['timestamp_list']
-    for timestamp in timestamp_list:
-        timestamp['SHEET_TICK'] += tick_diff
-    return out_audio_data
+# def audio_data_move_tick(audio_data, tick_diff):
+#     if audio_data is None:
+#         return None
+#     out_audio_data = copy.deepcopy(audio_data)
+#     timestamp_list = out_audio_data['timestamp_list']
+#     for timestamp in timestamp_list:
+#         timestamp['SHEET_TICK'] += tick_diff
+#     return out_audio_data
 
 # def tick_to_temposec(tick, tempo_list):
 #     for tempo in tempo_list:
