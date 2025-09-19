@@ -146,6 +146,7 @@ def track_to_noteev_list(track):
     tempo = 0
     for msg in track:
         tick += msg.time
+        # print(msg)
         if msg.type == 'note_on' and msg.velocity > 0:
             noteev = {
                 'usage':'OTM',
@@ -182,6 +183,9 @@ def track_to_noteev_list(track):
             cp_to_noteev_dict[cp] = noteev
         elif noteev['type'] == 'off':
             cp = (noteev['channel'],noteev['opitch'])
+            if cp not in cp_to_noteev_dict:
+                print(f'WARNING: note off without note on: cp={cp}, noteev={noteev}')
+                assert False
             noteev0 = cp_to_noteev_dict[cp]
             noteev0['tick1'] = noteev['tick']
             del cp_to_noteev_dict[cp]
