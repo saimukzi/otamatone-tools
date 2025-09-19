@@ -4,3 +4,9 @@ python3 -m venv venv
 venv\Scripts\Activate.ps1
 pip install --upgrade pip
 pip install mido
+
+python mid_to_json.py xxx.mid xxx.ori.json
+python json_fill_abstick.py xxx.ori.mid xxx.abs.json
+python json_pad_abstick.py  xxx.abs.mid xxx.pad.json
+python json_fill_reltick.py xxx.pad.mid xxx.rel.json
+
